@@ -6,7 +6,7 @@ export function stripBom(s: string): string {
 export function foldVietnamese(s: string): string {
   return s
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/gi, "d")
     .toLowerCase();
 }
