@@ -95,8 +95,8 @@ describe("listEntries hardening", () => {
 
 describe("./ entries", () => {
   test("mục thư mục ./ không làm mất gốc gói; ghi chú vẫn bị chặn", async () => {
-    const zip = await makeZip({ "G-v1/README.txt": "nội bộ" }, ["xx"]);
-    await patchNames(zip, [["xx/", "./"], ["xx", "./"]]);
+    const zip = await makeZip({ "G-v1/README.txt": "nội bộ" }, ["x"]);
+    await patchNames(zip, [["x/", "./"]]);
     const entries = await listEntries(zip);
     expect(entries.map((e) => e.path)).toEqual(["G-v1/README.txt"]);
     const texts = await readRootTexts(zip, entries);
@@ -107,10 +107,37 @@ describe("./ entries", () => {
     await patchNames(zip, [["x/", "./"]]);
     expect((await listEntries(zip)).map((e) => e.path)).toEqual(["G-v1/README.txt"]);
   });
-  test(".//x bị từ chối", async () => {
+  test(".//x được gộp thành x; //x bị từ chối", async () => {
     const zip = await makeZip({ "abc/x": "a" });
     await patchNames(zip, [["abc/", ".//"]]);
-    await expect(listEntries(zip)).rejects.toThrow(/không hợp lệ/);
+    expect((await listEntries(zip)).map((e) => e.path)).toEqual(["x"]);
+    const zip2 = await makeZip({ "a/x": "a" });
+    await patchNames(zip2, [["a/", "//"]]);
+    await expect(listEntries(zip2)).rejects.toThrow();
+  });
+});
+
+describe("dấu / lặp và tên đặt bí danh", () => {
+  test("G-v1//README.txt được gộp, vẫn tìm thấy và chặn ghi chú", async () => {
+    const zip = await makeZip({ "G-v1/xREADME.txt": "NOI BO" });
+    await patchNames(zip, [["/xREADME", "//README"]]);
+    const entries = await listEntries(zip);
+    expect(entries.map((e) => e.path)).toEqual(["G-v1/README.txt"]);
+    const texts = await readRootTexts(zip, entries);
+    expect(checkPackage({ zipFileName: "a.zip", entries, inputHashes: [], rootTexts: texts }).map((b) => b.rule)).toEqual(["no-distribute-notice"]);
+  });
+  test("G-v1/README.txt cùng G-v1//README.txt là trùng tên", async () => {
+    const zip = await makeZip({ "G-v1/README.txt": "a", "G-v1/xREADME.txt": "b" });
+    await patchNames(zip, [["/xREADME", "//README"]]);
+    await expect(listEntries(zip)).rejects.toThrow(/trùng tên/);
+  });
+  test("đoạn đường dẫn kết thúc bằng . hoặc khoảng trắng bị từ chối", async () => {
+    for (const bad of ["G-v1/READMEx", "G-v1/Ax/b.txt", "G-v1/Cx/d.txt"]) {
+      const zip = await makeZip({ [bad]: "a" });
+      const tail = bad === "G-v1/READMEx" ? [["READMEx", "README."]] : bad.startsWith("G-v1/A") ? [["Ax/", "A./"]] : [["Cx/", "C /"]];
+      await patchNames(zip, tail as [string, string][]);
+      await expect(listEntries(zip)).rejects.toThrow(/không hợp lệ/);
+    }
   });
 });
 

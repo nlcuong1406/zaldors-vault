@@ -19,7 +19,7 @@ function openStream(zf: yauzl.ZipFile, entry: yauzl.Entry): Promise<NodeJS.Reada
 }
 
 function normalisePath(name: string): string {
-  let p = name.replace(/\\/g, "/");
+  let p = name.replace(/\\/g, "/").replace(/\/+/g, "/");
   while (p.startsWith("./")) p = p.slice(2);
   while (p.includes("/./")) p = p.replace(/\/(\.\/)+/g, "/");
   return p;
@@ -41,7 +41,7 @@ async function forEachFile(zipPath: string, fn: (zf: yauzl.ZipFile, entry: yauzl
           if (entry.uncompressedSize > 0) return reject(new Error(`zip: mục thư mục có dữ liệu: ${entry.fileName}`));
           return zf.readEntry();
         }
-        if (path === "" || path.startsWith("/") || path === "." || path.endsWith("/.")) {
+        if (path === "" || path.startsWith("/") || path === "." || path.endsWith("/.") || path.split("/").some((seg) => /[. ]$/.test(seg))) {
           return reject(new Error(`zip: đường dẫn mục không hợp lệ: ${entry.fileName}`));
         }
         fn(zf, entry, path).then(() => zf.readEntry(), reject);
