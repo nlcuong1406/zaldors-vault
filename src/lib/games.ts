@@ -66,10 +66,20 @@ export function validateGame(g: { id: string; status: string }, releases: Releas
   }
 }
 
+export function useFixtures(env: Record<string, string | undefined>): boolean {
+  const on = env.VAULT_FIXTURES === "1";
+  if (on && env.CF_PAGES) {
+    throw new Error(
+      "VAULT_FIXTURES=1 đang bật trong lúc build trên Cloudflare Pages: dữ liệu mẫu không được dùng cho bản build thật. Xóa biến VAULT_FIXTURES khỏi cài đặt Cloudflare Pages.",
+    );
+  }
+  return on;
+}
+
 export async function getGames(): Promise<
   Array<{ entry: CollectionEntry<"games">; releases: Release[]; latest: Release | null }>
 > {
-  const fixtures = process.env.VAULT_FIXTURES === "1";
+  const fixtures = useFixtures(process.env);
   const entries = await getCollection("games");
   const games = entries.map((entry) => {
     const releases = loadReleases(entry.data.id, { fixtures });

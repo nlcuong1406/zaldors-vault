@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { checkPackage } from "../../scripts/lib/guard";
+import { checkPackage, hasNoDistributeNotice } from "../../scripts/lib/guard";
 import type { ZipEntry } from "../../scripts/lib/types";
 
 const entries: ZipEntry[] = [
@@ -56,8 +56,25 @@ describe("checkPackage", () => {
     expect(checkPackage({ ...clean, rootTexts: { "README.txt": "Bản vá công khai. Phân phối tự do." } })).toEqual([]);
   });
   test("báo đủ mọi vi phạm, đúng thứ tự", () => {
-    const b = checkPackage({ zipFileName: "x-internal.zip", entries, inputHashes: [entries[0].sha256], rootTexts: { "README.txt": "noi bo" } });
-    expect(b).toHaveLength(3);
-    expect(b.map((x) => x.rule)).toEqual(["internal-name", "original-file", "no-distribute-notice"]);
+    const withPak = [...entries, { path: "G-v1/VH_v03_P.pak", sizeBytes: 3, sha256: "cc".repeat(32) }];
+    const b = checkPackage({ zipFileName: "x-internal.zip", entries: withPak, inputHashes: [entries[0].sha256], rootTexts: { "README.txt": "noi bo" } });
+    expect(b).toHaveLength(4);
+    expect(b.map((x) => x.rule)).toEqual(["internal-name", "original-file", "container-file", "no-distribute-notice"]);
+  });
+  test("chặn file container .pak/.ucas/.utoc, nêu đường dẫn, không phân biệt hoa thường", () => {
+    const mk = (p: string) => checkPackage({ ...clean, entries: [...entries, { path: p, sizeBytes: 1, sha256: "dd".repeat(32) }] });
+    expect(mk("G-v1/VH_v03_P.pak")).toEqual([{ rule: "container-file", detail: "G-v1/VH_v03_P.pak" }]);
+    expect(mk("G-v1/X.PAK")).toEqual([{ rule: "container-file", detail: "G-v1/X.PAK" }]);
+    expect(mk("G-v1/a.ucas").map((b) => b.rule)).toEqual(["container-file"]);
+    expect(mk("G-v1/a.UTOC").map((b) => b.rule)).toEqual(["container-file"]);
+  });
+  test("tên chỉ giống container thì không bị chặn", () => {
+    for (const p of ["G-v1/pak.txt", "G-v1/x.pakfile", "G-v1/pak/readme.txt", "G-v1/a.pak.txt"]) {
+      expect(checkPackage({ ...clean, entries: [...entries, { path: p, sizeBytes: 1, sha256: "dd".repeat(32) }] })).toEqual([]);
+    }
+  });
+  test("hasNoDistributeNotice bắt chuỗi cấm", () => {
+    expect(hasNoDistributeNotice("Bản NỘI\r\nBỘ")).toBe(true);
+    expect(hasNoDistributeNotice("Bản công khai")).toBe(false);
   });
 });

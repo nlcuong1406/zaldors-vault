@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import config from "../vault.config";
 import { resolveVhRoot } from "./lib/env";
 import { assetUrl, createRelease, getExistingAssetSha, ghRunner, releaseTag, type Runner } from "./lib/github";
-import { checkPackage, type Block } from "./lib/guard";
+import { checkPackage, hasNoDistributeNotice, type Block } from "./lib/guard";
 import { parseSha256File, sha256File } from "./lib/hash";
 import { resolveReleaseInfo } from "./lib/release-info";
 import { readStore, upsertRelease } from "./lib/releases-store";
@@ -58,6 +58,10 @@ export async function runRelease(opts: {
   const entries = await listEntries(zipPath);
   const rootTexts = await readRootTexts(zipPath, entries);
   const blocks = checkPackage({ zipFileName: fileName, entries, inputHashes: project.inputHashes, rootTexts });
+  // Ghi chú từ --notes cũng phải qua kiểm tra (PHAT-HANH.txt trong gói đã được kiểm ở trên).
+  if (opts.notesFileText !== null && hasNoDistributeNotice(opts.notesFileText)) {
+    blocks.push({ rule: "no-distribute-notice", detail: "--notes" });
+  }
   if (blocks.length > 0) {
     log(`Gói ${fileName} bị chặn, không phát hành:`);
     for (const b of blocks) log(`  [${b.rule}] ${b.detail}`);
@@ -111,7 +115,7 @@ export async function runRelease(opts: {
   if (!FILE_NAME_RE.test(fileName)) {
     throw new Error(`Tên file "${fileName}" có ký tự GitHub sẽ đổi tên khi tải lên; chỉ dùng chữ, số, ".", "_", "-". Đổi tên bên VH.`);
   }
-  readStore(repoRoot, id); // kho hỏng thì dừng trước khi tải lên
+  const stored = readStore(repoRoot, id); // kho hỏng thì dừng trước khi tải lên
 
   // 6. Kiểm tra tag trên GitHub.
   if (repo === null) {
@@ -140,9 +144,11 @@ export async function runRelease(opts: {
   }
 
   // 8. Ghi kho.
+  // Chạy lại sau khi hỏng giữa chừng: giữ ngày của bản đã ghi nếu cùng version và cùng mã băm.
+  const prior = stored.find((x) => x.version === version && x.sha256 === sha256);
   const release: Release = {
     version,
-    date: info.date,
+    date: outcome === "resumed" && prior ? prior.date : info.date,
     fileName,
     sizeBytes,
     sha256,

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadReleases, validateGame } from "../../src/lib/games";
+import { loadReleases, useFixtures, validateGame } from "../../src/lib/games";
 import type { Release } from "../../scripts/lib/types";
 
 let tmp: string;
@@ -73,6 +73,13 @@ test("không phải mảng thì lỗi; BOM được bỏ qua", () => {
 
 test("file mẫu lad8 hợp lệ", () => {
   expect(loadReleases("lad8-infinite-wealth", { fixtures: true })).toHaveLength(2);
+});
+
+test("useFixtures: bật theo VAULT_FIXTURES, cấm khi build Cloudflare Pages", () => {
+  expect(useFixtures({})).toBe(false);
+  expect(useFixtures({ VAULT_FIXTURES: "1" })).toBe(true);
+  expect(useFixtures({ CF_PAGES: "1" })).toBe(false);
+  expect(() => useFixtures({ VAULT_FIXTURES: "1", CF_PAGES: "1" })).toThrow(/VAULT_FIXTURES/);
 });
 
 test("hoàn thành mà không có bản tải thì lỗi, nêu tên game", () => {

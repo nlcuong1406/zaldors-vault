@@ -97,13 +97,14 @@ Một số lưu ý khác:
 - Nếu tag đã tồn tại với file khác, lệnh dừng với thông báo "đã tồn tại". Bản đã phát hành không bao giờ bị ghi đè; muốn sửa lỗi thì ra số phiên bản mới.
 - Release ở trạng thái nháp bị từ chối, và sau khi tải lên lệnh kiểm tra lại trước khi ghi vào kho.
 
-## Ba quy tắc chặn
+## Bốn quy tắc chặn
 
-Không có cờ nào vượt qua được các quy tắc này. Bản bị chặn sẽ in `[tên quy tắc]` cùng chi tiết và dừng với mã 1.
+Không có cờ nào vượt qua được các quy tắc này. Bản bị chặn sẽ in `[tên quy tắc]` cùng chi tiết và dừng với mã 1. Thứ tự in: `internal-name`, `original-file`, `container-file`, `no-distribute-notice`.
 
 1. `internal-name`: tên file zip chứa `internal` (không phân biệt hoa thường).
 2. `original-file`: một file bất kỳ trong zip, ở thư mục nào cũng được, có SHA-256 trùng với một mục trong `inputs` của `project.json`, tức là file game gốc.
-3. `no-distribute-notice`: một file văn bản ở gốc gói (`.txt`, `.md`, `.json`) chứa "không phân phối" hoặc "nội bộ" (so sánh bỏ dấu, không phân biệt hoa thường).
+3. `container-file`: một mục trong zip có tên file kết thúc bằng `.pak`, `.ucas` hoặc `.utoc` (không phân biệt hoa thường). Đây là các container của Unreal có thể chứa file game gốc mà quy tắc băm không nhìn thấy. Chỉ xét phần đuôi: `pak.txt` hay `x.pakfile` không bị chặn.
+4. `no-distribute-notice`: một file văn bản ở gốc gói (`.txt`, `.md`, `.json`) chứa "không phân phối" hoặc "nội bộ" (so sánh bỏ dấu, không phân biệt hoa thường). Ghi chú truyền qua `--notes` cũng được kiểm tra bằng đúng cách này, và nếu dính thì báo `[no-distribute-notice] --notes`.
 
 Lệnh cũng dừng (không phát hành) khi gói trông đáng ngờ: file văn bản không phải UTF-8 hay UTF-16 có BOM, văn bản chứa ký tự NUL, tên mục trong zip bị trùng (kể cả khác hoa thường), hoặc tên mục lạ (rỗng, bắt đầu bằng `/`, phần nào kết thúc bằng dấu chấm hoặc dấu cách). Lý do là nếu không đọc chắc chắn được thì không công khai.
 
@@ -111,8 +112,29 @@ Lệnh cũng dừng (không phát hành) khi gói trông đáng ngờ: file văn
 
 ### Giới hạn đã biết
 
-- Quy tắc file gốc so từng file trong zip ở mọi độ sâu thư mục, nhưng không nhìn được vào bên trong một container đóng gói (ví dụ file `.pak`). File gốc nằm trong container như vậy sẽ không bị phát hiện. Người phát hành vẫn phải tự xem 20 file lớn nhất trong bản xem trước.
+- Quy tắc file gốc so từng file trong zip ở mọi độ sâu thư mục, nhưng không nhìn được vào bên trong một container đóng gói. Khoảng hở với `.pak`, `.ucas`, `.utoc` nay đã đóng bằng cách chặn hẳn các container đó (`container-file`). Một gói thực sự cần file `.pak` sẽ phải được phát hành bằng cách khác, sau khi chủ trang tự đổi quy tắc này. Với các định dạng container khác, người phát hành vẫn phải tự xem 20 file lớn nhất trong bản xem trước.
 - Quy tắc ghi chú chỉ là so khớp chuỗi con sau khi bỏ dấu. Câu như "không phân phối lại" trong một ghi chú giấy phép cũng sẽ bị chặn dù vô hại; khi đó đổi cách viết trong gói bên VH.
+
+## Phát hành lần đầu
+
+Làm lần lượt theo thứ tự:
+
+1. Tạo repo công khai trên GitHub rồi push.
+2. Cài `gh` bằng `winget install --id GitHub.cli`, rồi chạy `gh auth login`.
+3. Điền `repo` (dạng `chu-so-huu/ten-repo`) trong `vault.config.ts`.
+4. Chạy `npm run release -- <id> <version>` (bản xem trước) và đọc kỹ 20 file lớn nhất.
+5. Trước lần `--confirm` đầu tiên, kiểm tra `gh` trả đúng trường mà lệnh cần, bằng cách chạy `gh release view <một tag bất kỳ đã có> --repo <repo> --json assets,isDraft`. Xác nhận kết quả có `assets[].digest` dạng `sha256:...` và có `isDraft`. Nếu `gh` cũ không có `digest` thì cập nhật `gh`.
+6. Chạy lại lệnh ở bước 4 kèm `--confirm`.
+7. Mở link tải trên trang Release, tải file về, chạy `Get-FileHash <file>` (SHA-256) và so với mã băm đã in.
+8. Commit và push file JSON trong `src/data/releases/`.
+9. Chờ Cloudflare Pages build xong, rồi bấm thử nút tải trên trang thật.
+
+### Cài đặt Cloudflare Pages
+
+- Build command: `npm run build`
+- Output directory: `dist`
+- Node 24: đặt biến môi trường `NODE_VERSION=24`
+- Không đặt `VAULT_FIXTURES`. Nếu biến này bằng `1` trong lúc build trên Cloudflare Pages (có `CF_PAGES`), build sẽ báo lỗi và dừng.
 
 ## Xóa tay một bản phát hành
 

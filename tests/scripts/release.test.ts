@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { sha256File } from "../../scripts/lib/hash";
 import type { Runner } from "../../scripts/lib/github";
-import { readStore } from "../../scripts/lib/releases-store";
+import { readStore, upsertRelease } from "../../scripts/lib/releases-store";
 import { parseArgs, runRelease } from "../../scripts/release";
 import { cleanupFakeVh, makeFakeVh } from "../helpers/fake-vh";
 
@@ -45,6 +45,10 @@ beforeAll(async () => {
     la: {
       projectJson: { id: "la", title: "La", platform: "PC", edition: "Steam", inputs: [] },
       zips: { "LA Viet Hoa v1.0.zip": { "LA/PHAT-HANH.txt": "ghi chú", "LA/manifest.json": JSON.stringify({ game: { build: "1" } }), "LA/a.bin": "x" } },
+    },
+    pk: {
+      projectJson: { id: "pk", title: "Pk", platform: "PC", edition: "Steam", inputs: [] },
+      zips: { "PK-v1.0.zip": { "PK/PHAT-HANH.txt": "ghi chú", "PK/manifest.json": JSON.stringify({ game: { build: "1" } }), "PK/VH_v1_P.pak": "x" } },
     },
     sb: {
       projectJson: { id: "sb", title: "Stellar Blade", platform: "PC", edition: "Steam", inputs: [] },
@@ -161,6 +165,47 @@ test("chạy lại sau khi hỏng giữa chừng: không tải lại", async () 
   expect(r.outcome).toBe("resumed");
   expect(calls.some((c) => c.args.includes("create"))).toBe(false);
   expect(readStore(repoRoot, "lad8")).toHaveLength(1);
+});
+
+test("chạy lại: giữ ngày của bản đã ghi cùng version và sha256", async () => {
+  const old = { version: "0.9.1", date: "2026-01-02", fileName: LAD8_ZIP, sizeBytes: 1, sha256: lad8Sha, url: "https://x/y", gameBuild: "old", notes: "cũ" };
+  upsertRelease(repoRoot, "lad8", old);
+  handler = () => viewWith(lad8Sha);
+  const r = await runRelease(base);
+  expect(r.outcome).toBe("resumed");
+  expect(r.release!.date).toBe("2026-01-02");
+  expect(r.release!.gameBuild).toBe("17233673");
+  expect(readStore(repoRoot, "lad8")[0].date).toBe("2026-01-02");
+});
+
+test("chạy lại: kho có cùng version nhưng sha256 khác thì dùng ngày mới", async () => {
+  upsertRelease(repoRoot, "lad8", { version: "0.9.1", date: "2026-01-02", fileName: LAD8_ZIP, sizeBytes: 1, sha256: wrongSha, url: "https://x/y", gameBuild: "old", notes: "cũ" });
+  handler = () => viewWith(lad8Sha);
+  const r = await runRelease(base);
+  expect(r.release!.date).toBe("2026-11-27");
+});
+
+test("ghi chú từ --notes có chữ cấm phân phối thì bị chặn, không gọi gh, không ghi kho", async () => {
+  for (const confirm of [false, true]) {
+    const r = await runRelease({ ...base, confirm, notesFileText: "Bản nội\r\nbộ, đừng chia sẻ" });
+    expect(r.outcome).toBe("blocked");
+    expect(r.blocks).toEqual([{ rule: "no-distribute-notice", detail: "--notes" }]);
+  }
+  expect(calls).toEqual([]);
+  expect(readStore(repoRoot, "lad8")).toEqual([]);
+  expect(logs.join("\n")).toContain("--notes");
+});
+
+test("ghi chú --notes sạch thì không bị chặn", async () => {
+  const r = await runRelease({ ...base, confirm: false, notesFileText: "Ghi chú công khai." });
+  expect(r.outcome).toBe("preview");
+});
+
+test("gói có file .pak bị chặn bằng container-file", async () => {
+  const r = await runRelease({ ...base, id: "pk", version: "1.0" });
+  expect(r.outcome).toBe("blocked");
+  expect(r.blocks).toEqual([{ rule: "container-file", detail: "PK/VH_v1_P.pak" }]);
+  expect(calls).toEqual([]);
 });
 
 test("tag đã có nhưng file khác: dừng, không ghi kho", async () => {
