@@ -21,9 +21,9 @@ test("tag và url", () => {
 
 describe("getExistingAssetSha", () => {
   test("gọi đúng gh release view", async () => {
-    const { run, calls } = scripted(ok(JSON.stringify({ assets: [] })));
+    const { run, calls } = scripted(ok(JSON.stringify({ isDraft: false, assets: [] })));
     await getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip");
-    expect(calls).toEqual([{ cmd: "gh", args: ["release", "view", "g-v1", "--repo", "chu/kho", "--json", "assets"] }]);
+    expect(calls).toEqual([{ cmd: "gh", args: ["release", "view", "g-v1", "--repo", "chu/kho", "--json", "assets,isDraft"] }]);
   });
   test("chưa có release: no-release", async () => {
     const { run } = scripted({ code: 1, stdout: "", stderr: "release not found" });
@@ -34,20 +34,30 @@ describe("getExistingAssetSha", () => {
     await expect(getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip")).rejects.toThrow(/401/);
   });
   test("có release nhưng không có file: null", async () => {
-    const { run } = scripted(ok(JSON.stringify({ assets: [{ name: "khac.zip", digest: `sha256:${SHA}` }] })));
+    const { run } = scripted(ok(JSON.stringify({ isDraft: false, assets: [{ name: "khac.zip", digest: `sha256:${SHA}` }] })));
     expect(await getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip")).toBeNull();
   });
   test("trả sha256 chữ thường, bỏ tiền tố", async () => {
-    const { run } = scripted(ok(JSON.stringify({ assets: [{ name: "G.zip", digest: `sha256:${SHA.toUpperCase()}` }] })));
+    const { run } = scripted(ok(JSON.stringify({ isDraft: false, assets: [{ name: "G.zip", digest: `sha256:${SHA.toUpperCase()}` }] })));
     expect(await getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip")).toBe(SHA);
   });
   test("file có nhưng thiếu digest: ném lỗi", async () => {
-    const { run } = scripted(ok(JSON.stringify({ assets: [{ name: "G.zip" }] })));
+    const { run } = scripted(ok(JSON.stringify({ isDraft: false, assets: [{ name: "G.zip" }] })));
     await expect(getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip")).rejects.toThrow(/digest/);
   });
   test("digest không phải sha256: ném lỗi", async () => {
-    const { run } = scripted(ok(JSON.stringify({ assets: [{ name: "G.zip", digest: "md5:abc" }] })));
+    const { run } = scripted(ok(JSON.stringify({ isDraft: false, assets: [{ name: "G.zip", digest: "md5:abc" }] })));
     await expect(getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip")).rejects.toThrow(/digest/);
+  });
+  test("release đang là bản nháp: ném lỗi", async () => {
+    const { run } = scripted(ok(JSON.stringify({ isDraft: true, assets: [{ name: "G.zip", digest: `sha256:${SHA}` }] })));
+    await expect(getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip")).rejects.toThrow(/bản nháp/);
+  });
+  test("thiếu hoặc sai kiểu isDraft: ném lỗi", async () => {
+    for (const v of [{}, { isDraft: "false" }]) {
+      const { run } = scripted(ok(JSON.stringify({ ...v, assets: [{ name: "G.zip", digest: `sha256:${SHA}` }] })));
+      await expect(getExistingAssetSha(run, "chu/kho", "g-v1", "G.zip")).rejects.toThrow(/isDraft/);
+    }
   });
   test("đầu ra không phải JSON: ném lỗi", async () => {
     const { run } = scripted(ok("không phải json"));

@@ -3,7 +3,8 @@
  * https://cli.github.com/manual/gh_release_view và gh_release_create (kiểm tra 2026-11-27).
  *
  * 1. Xem release đã có chưa, và mã băm file đã tải lên:
- *      gh release view <tag> --repo <chủ/repo> --json assets
+ *      gh release view <tag> --repo <chủ/repo> --json assets,isDraft
+ *    `isDraft` cũng có trong danh sách trường của gh: bản nháp (tải lên dở dang) bị từ chối.
  *    Trường JSON `assets` có trong danh sách của gh. Tài liệu không mô tả cấu trúc bên
  *    trong; ta dựa vào assets[].name và assets[].digest (dạng "sha256:<hex>") như API
  *    GitHub trả về. Thiếu digest thì không kiểm chứng được, nên ném lỗi.
@@ -40,7 +41,7 @@ export async function getExistingAssetSha(
   tag: string,
   fileName: string,
 ): Promise<string | null | "no-release"> {
-  const r = await run("gh", ["release", "view", tag, "--repo", repo, "--json", "assets"]);
+  const r = await run("gh", ["release", "view", tag, "--repo", repo, "--json", "assets,isDraft"]);
   if (r.code !== 0) {
     if (/release not found/i.test(r.stderr)) return "no-release";
     throw new Error(`gh release view thất bại (mã ${r.code}): ${r.stderr.trim() || r.stdout.trim() || "không có thông báo"}`);
@@ -50,6 +51,11 @@ export async function getExistingAssetSha(
     parsed = JSON.parse(r.stdout);
   } catch {
     throw new Error("gh release view trả về dữ liệu không phải JSON.");
+  }
+  const isDraft = (parsed as { isDraft?: unknown } | null)?.isDraft;
+  if (typeof isDraft !== "boolean") throw new Error("gh release view không trả về trường isDraft, không kiểm chứng được.");
+  if (isDraft) {
+    throw new Error(`Release ${tag} đang là bản nháp; công bố hoặc xóa tay trên GitHub rồi chạy lại.`);
   }
   const assets = (parsed as { assets?: unknown } | null)?.assets;
   if (!Array.isArray(assets)) throw new Error("gh release view không trả về danh sách assets.");
@@ -90,7 +96,7 @@ export async function createRelease(
 /** Runner thật: gọi gh không qua shell. */
 export const ghRunner: Runner = (cmd, args) =>
   new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { shell: false, windowsHide: true });
+    const child = spawn(cmd, args, { shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
     const out: Buffer[] = [];
     const err: Buffer[] = [];
     child.stdout.on("data", (d: Buffer) => out.push(d));

@@ -28,7 +28,7 @@ let base: Parameters<typeof runRelease>[0];
 const ok = (stdout = "") => ({ code: 0, stdout, stderr: "" });
 const notFound = () => ({ code: 1, stdout: "", stderr: "release not found" });
 const viewWith = (digest: string | undefined) =>
-  ok(JSON.stringify({ assets: [{ name: LAD8_ZIP, ...(digest ? { digest: `sha256:${digest}` } : {}) }] }));
+  ok(JSON.stringify({ isDraft: false, assets: [{ name: LAD8_ZIP, ...(digest ? { digest: `sha256:${digest}` } : {}) }] }));
 
 beforeAll(async () => {
   vhRoot = await makeFakeVh({
@@ -41,6 +41,10 @@ beforeAll(async () => {
           "LAD8-VietHoa-v0.9.1/data/text.bin": "dữ liệu",
         },
       },
+    },
+    la: {
+      projectJson: { id: "la", title: "La", platform: "PC", edition: "Steam", inputs: [] },
+      zips: { "LA Viet Hoa v1.0.zip": { "LA/PHAT-HANH.txt": "ghi chú", "LA/manifest.json": JSON.stringify({ game: { build: "1" } }), "LA/a.bin": "x" } },
     },
     sb: {
       projectJson: { id: "sb", title: "Stellar Blade", platform: "PC", edition: "Steam", inputs: [] },
@@ -124,7 +128,14 @@ test("file .sha256 không đọc được mã băm thì coi là lệch", async (
 });
 
 test("phát hành mới: tạo release rồi ghi kho", async () => {
-  handler = (args) => (args[1] === "view" ? notFound() : ok());
+  let created = false;
+  handler = (args) => {
+    if (args[1] === "create") {
+      created = true;
+      return ok();
+    }
+    return created ? viewWith(lad8Sha) : notFound();
+  };
   const r = await runRelease(base);
   expect(r.outcome).toBe("published");
   expect(r.release).toMatchObject({
@@ -159,7 +170,7 @@ test("tag đã có nhưng file khác: dừng, không ghi kho", async () => {
 });
 
 test("tag đã có nhưng không có file đó: dừng, không ghi kho", async () => {
-  handler = () => ok(JSON.stringify({ assets: [] }));
+  handler = () => ok(JSON.stringify({ isDraft: false, assets: [] }));
   await expect(runRelease(base)).rejects.toThrow(/đã tồn tại/);
   expect(readStore(repoRoot, "lad8")).toEqual([]);
   expect(calls.some((c) => c.args.includes("create"))).toBe(false);
@@ -177,6 +188,42 @@ test("gh xem release lỗi khác (không phải not found): dừng, không tạo
   await expect(runRelease(base)).rejects.toThrow(/401/);
   expect(calls.some((c) => c.args.includes("create"))).toBe(false);
   expect(readStore(repoRoot, "lad8")).toEqual([]);
+});
+
+test("release đang là bản nháp: không coi là đã phát hành, không ghi kho", async () => {
+  handler = () => ok(JSON.stringify({ isDraft: true, assets: [{ name: LAD8_ZIP, digest: `sha256:${lad8Sha}` }] }));
+  await expect(runRelease(base)).rejects.toThrow(/bản nháp/);
+  expect(readStore(repoRoot, "lad8")).toEqual([]);
+  expect(calls.some((c) => c.args.includes("create"))).toBe(false);
+});
+
+test("sau khi tạo, GitHub báo file khác: không ghi kho", async () => {
+  let created = false;
+  handler = (args) => {
+    if (args[1] === "create") {
+      created = true;
+      return ok();
+    }
+    return created ? viewWith(wrongSha) : notFound();
+  };
+  await expect(runRelease(base)).rejects.toThrow(/không khớp/);
+  expect(readStore(repoRoot, "lad8")).toEqual([]);
+});
+
+test("kho hỏng thì dừng trước khi gọi gh", async () => {
+  writeFileSync(join(repoRoot, "src", "data", "releases", "lad8.json"), "{hỏng", "utf8");
+  await expect(runRelease(base)).rejects.toThrow(/kho/i);
+  expect(calls).toEqual([]);
+});
+
+test("tên file zip có ký tự lạ bị từ chối trước khi gọi gh", async () => {
+  await expect(runRelease({ ...base, id: "la", version: "1.0" })).rejects.toThrow(/Tên file/);
+  expect(calls).toEqual([]);
+});
+
+test("mã dự án sai định dạng bị từ chối", async () => {
+  await expect(runRelease({ ...base, id: "../lad8" })).rejects.toThrow(/Mã dự án/);
+  expect(calls).toEqual([]);
 });
 
 test("chưa cấu hình repo", async () => {
@@ -213,6 +260,8 @@ describe("parseArgs", () => {
     [["lad8", "0.9.1", "--notes", "--confirm"]],
     [["lad8", "0.9.1", "--confirm=yes"]],
     [["lad8", "v0.9.1"]],
+    [["../x", "0.9.1"]],
+    [["Lad8", "0.9.1"]],
     [["lad8", "0.9.x"]],
     [["lad8", "0.9.1", "--notes", "a", "--notes", "b"]],
   ])("từ chối %j", (argv) => {

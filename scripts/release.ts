@@ -7,13 +7,15 @@ import { assetUrl, createRelease, getExistingAssetSha, ghRunner, releaseTag, typ
 import { checkPackage, type Block } from "./lib/guard";
 import { parseSha256File, sha256File } from "./lib/hash";
 import { resolveReleaseInfo } from "./lib/release-info";
-import { upsertRelease } from "./lib/releases-store";
+import { readStore, upsertRelease } from "./lib/releases-store";
 import type { Release } from "./lib/types";
 import { findReleaseZip, loadProject } from "./lib/vh";
 import { listEntries, readRootTexts } from "./lib/zip";
 
 export type Outcome = "blocked" | "preview" | "published" | "resumed";
 
+const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
+const FILE_NAME_RE = /^[A-Za-z0-9._-]+$/;
 const VERSION_RE = /^\d+(\.\d+)*$/;
 
 function humanSize(n: number): string {
@@ -44,6 +46,8 @@ export async function runRelease(opts: {
   if (!VERSION_RE.test(version)) {
     throw new Error(`Phiên bản "${version}" không hợp lệ: chỉ nhận số và dấu chấm, ví dụ 0.9.1.`);
   }
+
+  if (!ID_RE.test(id)) throw new Error(`Mã dự án "${id}" không hợp lệ: chỉ nhận chữ thường, số và dấu gạch ngang.`);
 
   // 1. Tìm dự án và file zip.
   const project = loadProject(vhRoot, id);
@@ -104,6 +108,11 @@ export async function runRelease(opts: {
     return { outcome: "preview", blocks: [], release: null };
   }
 
+  if (!FILE_NAME_RE.test(fileName)) {
+    throw new Error(`Tên file "${fileName}" có ký tự GitHub sẽ đổi tên khi tải lên; chỉ dùng chữ, số, ".", "_", "-". Đổi tên bên VH.`);
+  }
+  readStore(repoRoot, id); // kho hỏng thì dừng trước khi tải lên
+
   // 6. Kiểm tra tag trên GitHub.
   if (repo === null) {
     throw new Error("Chưa cấu hình repo GitHub: điền `repo` trong vault.config.ts (dạng chu-so-huu/ten-repo).");
@@ -114,6 +123,10 @@ export async function runRelease(opts: {
   if (existing === "no-release") {
     // 7. Tạo release và tải file lên.
     await createRelease(run, { repo, tag, title: `${project.title} – Việt hóa v${version}`, notes: info.notes, zipPath });
+    const after = await getExistingAssetSha(run, repo, tag, fileName);
+    if (after !== sha256) {
+      throw new Error(`Sau khi tải lên, release ${tag} không khớp file cục bộ (GitHub trả ${String(after)}, cần ${sha256}). Chưa ghi vào kho.`);
+    }
     outcome = "published";
   } else if (existing === sha256) {
     log(`Release ${tag} đã có file giống hệt, bỏ qua bước tải lên và ghi tiếp vào kho.`);
@@ -189,6 +202,7 @@ export function parseArgs(argv: string[]): ParsedArgs | { error: string } {
   }
   if (positional.length !== 2) return { error: "Cần đúng hai tham số: <id> và <version>." };
   const [id, version] = positional;
+  if (!ID_RE.test(id)) return { error: `Mã dự án "${id}" không hợp lệ: chỉ nhận chữ thường, số và dấu gạch ngang.` };
   if (!VERSION_RE.test(version)) return { error: `Phiên bản "${version}" không hợp lệ: chỉ nhận số và dấu chấm, ví dụ 0.9.1.` };
   return { id, version, notes, gameBuild, confirm };
 }
@@ -224,7 +238,7 @@ async function main(): Promise<void> {
     });
     if (r.outcome === "blocked") process.exitCode = 1;
   } catch (e) {
-    console.error(`Lỗi: ${(e as Error).message}`);
+    console.error(`Lỗi: ${e instanceof Error ? e.message : String(e)}`);
     process.exitCode = 1;
   }
 }
