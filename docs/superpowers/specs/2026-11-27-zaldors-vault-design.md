@@ -199,7 +199,7 @@ Bước 6 dùng `gh`. Máy chưa có `gh`, việc cài đặt cần người dù
 
 1. Ảnh bìa, tên game, hệ máy, trạng thái, thanh tiến độ.
 2. Khối tải: phiên bản mới nhất, ngày, dung lượng, SHA-256, nút tải, và
-   dòng "Hỗ trợ: `<edition>`, `<gameVersion>`". Nếu chưa có bản nào thì
+   dòng "Hỗ trợ: `<edition>`, `<gameBuild>`". Nếu chưa có bản nào thì
    khối này ghi "Chưa có bản phát hành".
 3. Ảnh trong game.
 4. Giới thiệu.
