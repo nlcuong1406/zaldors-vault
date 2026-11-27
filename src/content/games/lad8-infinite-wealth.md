@@ -4,7 +4,7 @@ title: "Like a Dragon: Infinite Wealth"
 platform: "PC (Steam, Windows)"
 edition: "Steam"
 status: dang-dich
-progress: 0
+progress: 90
 tagline: "Bản Việt hóa của người hâm mộ cho bản Steam trên Windows: giao diện, cốt truyện chính và nội dung phụ."
 credits:
   - name: "Zaldor (Vergilize)"
