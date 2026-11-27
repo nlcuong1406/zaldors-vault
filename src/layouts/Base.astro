@@ -1,0 +1,87 @@
+---
+import "../styles/tokens.css";
+import config from "../../vault.config";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="site-name" href="/">{config.siteName}</a>
+      <nav aria-label="Điều hướng chính">
+        <a href="/">Kho game</a>
+        <a href="/huong-dan/">Hướng dẫn</a>
+        <a href="/gioi-thieu/">Giới thiệu</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <p>
+        Zaldor's Vault chỉ phát hành bản vá ngôn ngữ. Bạn cần có bản game gốc hợp lệ. Trang không liên kết với nhà phát hành nào.
+      </p>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-block);
+  }
+  .site-name {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  nav {
+    display: flex;
+    gap: 1.25rem;
+  }
+  nav a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  nav a:hover {
+    color: var(--accent);
+  }
+  main {
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    min-height: 60vh;
+  }
+  .site-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    text-align: center;
+    font-size: 0.875rem;
+  }
+  .site-footer p {
+    max-width: 48rem;
+    margin: 0 auto;
+  }
+</style>

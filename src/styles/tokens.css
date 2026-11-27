@@ -1,0 +1,48 @@
+@import "@fontsource/eb-garamond/500.css";
+@import "@fontsource/eb-garamond/600.css";
+@import "@fontsource/be-vietnam-pro/400.css";
+@import "@fontsource/be-vietnam-pro/600.css";
+
+:root {
+  --bg: #16130e;
+  --bg-block: #2a2418;
+  --text: #ede4d0;
+  --muted: #a99b7c;
+  --accent: #d9b25f;
+  --border: #4a3f28;
+
+  --font-heading: "EB Garamond", Georgia, "Times New Roman", serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+a {
+  color: var(--accent);
+}
