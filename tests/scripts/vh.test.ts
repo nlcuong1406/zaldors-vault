@@ -27,7 +27,15 @@ beforeAll(async () => {
     "khong-inputs": { projectJson: { id: "khong-inputs", ...base } },
     "hai-zip": {
       projectJson: { id: "hai-zip", ...base },
-      zips: { "G-v1.0.zip": { "a.txt": "a" }, "G-v1.0-internal.zip": { "a.txt": "b" } },
+      zips: { "G-v1.0.zip": { "a.txt": "a" }, "G-v1.0-b.zip": { "a.txt": "b" } },
+    },
+    "ban-noi-bo-kem": {
+      projectJson: { id: "ban-noi-bo-kem", ...base },
+      zips: { "SB-v0.3-internal.zip": { "a.txt": "a" }, "SB-v0.3.zip": { "a.txt": "b" } },
+    },
+    "hai-noi-bo": {
+      projectJson: { id: "hai-noi-bo", ...base },
+      zips: { "G-v1.0-internal.zip": { "a.txt": "a" }, "G-v1.0-Internal-b.zip": { "a.txt": "b" } },
     },
     ma: {},
     hong: { extraFiles: { "project.json": "{ không phải json" } },
@@ -71,7 +79,7 @@ test("loadProject báo id khi thiếu file hoặc JSON hỏng", () => {
 
 test("listProjectIds chỉ lấy thư mục có project.json, sắp a-z", async () => {
   const ids = listProjectIds(root);
-  expect(ids).toEqual(["chi-v10", "co-bom", "game-thu", "hai-zip", "hong", "khong-inputs", "khong-release", "noi-bo"]);
+  expect(ids).toEqual(["ban-noi-bo-kem", "chi-v10", "co-bom", "game-thu", "hai-noi-bo", "hai-zip", "hong", "khong-inputs", "khong-release", "noi-bo"]);
   expect(listProjectIds(await makeFakeVh({}))).toEqual([]);
 });
 
@@ -98,6 +106,15 @@ test("bỏ qua thư mục giải nén và file .sha256", () => {
 test("hai zip cùng phiên bản thì dừng", () => {
   const p = loadProject(root, "hai-zip");
   expect(() => findReleaseZip(p, "1.0")).toThrow(/nhiều hơn một/);
+});
+
+test("trùng phiên bản: bỏ bản internal nếu còn đúng một bản", () => {
+  expect(basename(findReleaseZip(loadProject(root, "ban-noi-bo-kem"), "0.3"))).toBe("SB-v0.3.zip");
+});
+
+test("trùng phiên bản mà toàn bản internal thì vẫn dừng và liệt kê đủ tên", () => {
+  expect(() => findReleaseZip(loadProject(root, "hai-noi-bo"), "1.0")).toThrow(/nhiều hơn một.*G-v1\.0-Internal-b\.zip, G-v1\.0-internal\.zip/);
+  expect(() => findReleaseZip(loadProject(root, "hai-zip"), "1.0")).toThrow(/G-v1\.0-b\.zip, G-v1\.0\.zip|G-v1\.0\.zip, G-v1\.0-b\.zip/);
 });
 
 test("0.9.1 không khớp v0.9.10", () => {

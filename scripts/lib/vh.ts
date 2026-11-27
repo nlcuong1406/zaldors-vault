@@ -59,6 +59,8 @@ export function findReleaseZip(project: VhProject, version: string): string {
     throw new Error(`Dự án "${project.id}": không tìm thấy file zip cho phiên bản ${version} trong ${project.releaseDir}`);
   }
   if (hits.length > 1) {
+    const publicHits = hits.filter((n) => !/internal/i.test(n));
+    if (publicHits.length === 1) return join(project.releaseDir, publicHits[0]);
     throw new Error(`Dự án "${project.id}": có nhiều hơn một file zip cho phiên bản ${version}: ${hits.join(", ")}`);
   }
   return join(project.releaseDir, hits[0]);

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -49,6 +50,19 @@ beforeAll(async () => {
     pk: {
       projectJson: { id: "pk", title: "Pk", platform: "PC", edition: "Steam", inputs: [] },
       zips: { "PK-v1.0.zip": { "PK/PHAT-HANH.txt": "ghi chú", "PK/manifest.json": JSON.stringify({ game: { build: "1" } }), "PK/VH_v1_P.pak": "x" } },
+    },
+    pkok: {
+      projectJson: { id: "pkok", title: "Pk Ok", platform: "PC", edition: "Steam", inputs: [] },
+      zips: {
+        "PKOK-v1.0.zip": {
+          "PKOK/PHAT-HANH.txt": "ghi chú",
+          "PKOK/manifest.json": JSON.stringify({
+            game: { build: "1" },
+            pak: { name: "VH_v1_P.pak", sha256: createHash("sha256").update("x").digest("hex"), members: [{ path: "G/a.uasset", sha256: "11".repeat(32) }] },
+          }),
+          "PKOK/VH_v1_P.pak": "x",
+        },
+      },
     },
     sb: {
       projectJson: { id: "sb", title: "Stellar Blade", platform: "PC", edition: "Steam", inputs: [] },
@@ -204,7 +218,14 @@ test("ghi chú --notes sạch thì không bị chặn", async () => {
 test("gói có file .pak bị chặn bằng container-file", async () => {
   const r = await runRelease({ ...base, id: "pk", version: "1.0" });
   expect(r.outcome).toBe("blocked");
-  expect(r.blocks).toEqual([{ rule: "container-file", detail: "PK/VH_v1_P.pak" }]);
+  expect(r.blocks).toEqual([{ rule: "container-file", detail: "PK/VH_v1_P.pak: không có manifest.json mô tả" }]);
+  expect(calls).toEqual([]);
+});
+
+test("gói có file .pak khớp manifest thì qua được bản xem trước", async () => {
+  const r = await runRelease({ ...base, id: "pkok", version: "1.0", confirm: false });
+  expect(r.outcome).toBe("preview");
+  expect(r.blocks).toEqual([]);
   expect(calls).toEqual([]);
 });
 
