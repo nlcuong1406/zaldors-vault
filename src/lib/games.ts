@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getCollection, type CollectionEntry } from "astro:content";
+import { stripBom } from "../../scripts/lib/text";
 import type { Release } from "../../scripts/lib/types";
 
 export const STATUS_LABEL: Record<string, string> = {
@@ -20,13 +21,42 @@ function compareVersionsDesc(a: string, b: string): number {
   return 0;
 }
 
+function parseReleases(path: string): Release[] {
+  const bad = (what: string): never => {
+    throw new Error(`${path}: ${what}`);
+  };
+  let data: unknown;
+  try {
+    data = JSON.parse(stripBom(readFileSync(path, "utf8")));
+  } catch (e) {
+    return bad(`JSON hỏng (${(e as Error).message})`);
+  }
+  if (!Array.isArray(data)) return bad("phải là một mảng");
+  data.forEach((raw, i) => {
+    const r = (raw ?? {}) as Record<string, unknown>;
+    const at = `mục ${i + 1}`;
+    const str = (k: string) => (typeof r[k] === "string" ? (r[k] as string) : "");
+    if (!/^\d+(\.\d+)*$/.test(str("version"))) bad(`${at}: trường version không hợp lệ`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(str("date"))) bad(`${at}: trường date phải dạng YYYY-MM-DD`);
+    if (str("fileName").trim() === "") bad(`${at}: trường fileName trống`);
+    if (typeof r.sizeBytes !== "number" || !Number.isFinite(r.sizeBytes) || r.sizeBytes < 0) {
+      bad(`${at}: trường sizeBytes phải là số không âm`);
+    }
+    if (!/^[0-9a-f]{64}$/.test(str("sha256"))) bad(`${at}: trường sha256 phải gồm 64 ký tự hex thường`);
+    if (!str("url").startsWith("https://")) bad(`${at}: trường url phải bắt đầu bằng https://`);
+    if (str("gameBuild").trim() === "") bad(`${at}: trường gameBuild trống`);
+    if (typeof r.notes !== "string") bad(`${at}: trường notes phải là chuỗi`);
+  });
+  return data as Release[];
+}
+
 export function loadReleases(id: string, opts: { fixtures?: boolean; root?: string } = {}): Release[] {
   const root = opts.root ?? process.cwd();
   const real = join(root, "src", "data", "releases", `${id}.json`);
   const fixture = join(root, "tests", "fixtures", "releases", `${id}.json`);
   const path = opts.fixtures && existsSync(fixture) ? fixture : real;
   if (!existsSync(path)) return [];
-  const releases = JSON.parse(readFileSync(path, "utf8")) as Release[];
+  const releases = parseReleases(path);
   return [...releases].sort((a, b) => compareVersionsDesc(a.version, b.version));
 }
 

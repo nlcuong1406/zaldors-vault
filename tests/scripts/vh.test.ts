@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { findReleaseZip, listProjectIds, loadProject } from "../../scripts/lib/vh";
+import { findReleaseZip, listProjectIds, listReleaseZips, loadProject } from "../../scripts/lib/vh";
 import { cleanupFakeVh, makeFakeVh } from "../helpers/fake-vh";
 
 afterAll(cleanupFakeVh);
@@ -73,6 +73,15 @@ test("listProjectIds chỉ lấy thư mục có project.json, sắp a-z", async 
   const ids = listProjectIds(root);
   expect(ids).toEqual(["chi-v10", "co-bom", "game-thu", "hai-zip", "hong", "khong-inputs", "khong-release", "noi-bo"]);
   expect(listProjectIds(await makeFakeVh({}))).toEqual([]);
+});
+
+test("listReleaseZips: chỉ file .zip (không phân biệt hoa thường), sắp a-z, thiếu thư mục thì []", () => {
+  const p = loadProject(root, "game-thu");
+  const names = listReleaseZips(p.releaseDir);
+  expect(names.length).toBeGreaterThan(0);
+  expect(names.every((n) => /\.zip$/i.test(n))).toBe(true);
+  expect(names).toEqual([...names].sort());
+  expect(listReleaseZips(join(root, "khong-co-thu-muc"))).toEqual([]);
 });
 
 test("tìm zip theo phiên bản, không khớp tiền tố", () => {

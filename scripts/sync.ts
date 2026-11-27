@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveVhRoot } from "./lib/env";
 import { readStore } from "./lib/releases-store";
-import { listProjectIds, loadProject } from "./lib/vh";
+import { listProjectIds, listReleaseZips, loadProject } from "./lib/vh";
 
 export interface SyncResult {
   created: string[];
@@ -82,19 +82,14 @@ function fillFrontMatter(text: string, values: Record<string, string>): { text: 
   return { text: lines.join(eol), fields };
 }
 
-function listZips(dir: string): string[] {
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isFile() && /\.zip$/i.test(e.name))
-    .map((e) => e.name)
-    .sort();
-}
-
 export function runSync(opts: { vhRoot: string; repoRoot: string }): SyncResult {
   const { vhRoot, repoRoot } = opts;
   const gamesDir = join(repoRoot, "src", "content", "games");
   const storeDir = join(repoRoot, "src", "data", "releases");
   const result: SyncResult = { created: [], filled: [], unpublished: [], orphans: [], errors: [] };
+  if (!existsSync(join(vhRoot, "projects"))) {
+    throw new Error(`Không tìm thấy thư mục projects trong VH_ROOT=${vhRoot}`);
+  }
   mkdirSync(gamesDir, { recursive: true });
 
   const ids = listProjectIds(vhRoot);
@@ -123,7 +118,7 @@ export function runSync(opts: { vhRoot: string; repoRoot: string }): SyncResult 
         writeFileSync(store, "[]\n", "utf8");
       }
       const published = new Set(readStore(repoRoot, id).map((r) => r.fileName));
-      for (const zip of listZips(project.releaseDir)) {
+      for (const zip of listReleaseZips(project.releaseDir)) {
         if (!published.has(zip)) result.unpublished.push({ id, zip });
       }
     } catch (e) {
@@ -143,7 +138,14 @@ export function runSync(opts: { vhRoot: string; repoRoot: string }): SyncResult 
 function main(): void {
   const repoRoot = process.cwd();
   const vhRoot = resolveVhRoot(repoRoot);
-  const r = runSync({ vhRoot, repoRoot });
+  let r: SyncResult;
+  try {
+    r = runSync({ vhRoot, repoRoot });
+  } catch (e) {
+    console.error(`Lỗi: ${e instanceof Error ? e.message : String(e)}`);
+    process.exitCode = 1;
+    return;
+  }
   console.log(`Thư mục VH: ${vhRoot}`);
   console.log(`\nĐã tạo file game (${r.created.length}):`);
   r.created.forEach((id) => console.log(`  ${id}`));

@@ -41,15 +41,18 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Tên (không kèm đường dẫn) các file *.zip thường trong thư mục release, sắp a-z. Thiếu thư mục thì trả []. */
+export function listReleaseZips(releaseDir: string): string[] {
+  if (!existsSync(releaseDir)) return [];
+  return readdirSync(releaseDir, { withFileTypes: true })
+    .filter((e) => e.isFile() && /\.zip$/i.test(e.name))
+    .map((e) => e.name)
+    .sort();
+}
+
 export function findReleaseZip(project: VhProject, version: string): string {
   if (!version.trim()) throw new Error(`Dự án "${project.id}": phiên bản trống`);
-  let names: string[] = [];
-  if (existsSync(project.releaseDir)) {
-    names = readdirSync(project.releaseDir, { withFileTypes: true })
-      .filter((e) => e.isFile() && /\.zip$/i.test(e.name))
-      .map((e) => e.name)
-      .sort();
-  }
+  const names = listReleaseZips(project.releaseDir);
   const re = new RegExp(`(?<![A-Za-z0-9])v${escapeRegex(version)}(?!\\d|\\.\\d)`);
   const hits = names.filter((n) => re.test(n));
   if (hits.length === 0) {

@@ -20,7 +20,7 @@ const g = entry.data;
       g.cover ? (
         <Image src={g.cover} alt="" widths={[360, 720]} sizes="(min-width: 960px) 20rem, (min-width: 640px) 45vw, 100vw" />
       ) : (
-        <span class="placeholder">{g.title}</span>
+        <span class="placeholder" aria-hidden="true">{g.title}</span>
       )
     }
   </div>
@@ -51,6 +51,9 @@ const g = entry.data;
   }
   .card:hover {
     transform: translateY(-2px);
+    border-color: var(--muted);
+  }
+  .card.downloadable:hover {
     border-color: var(--accent);
   }
   .card:focus-visible {

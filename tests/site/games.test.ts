@@ -46,6 +46,35 @@ test("fixtures chỉ được đọc khi bật", () => {
   expect(loadReleases("g", { root: tmp, fixtures: true })).toHaveLength(1);
 });
 
+function rootWith(content: string): string {
+  const r = mkdtempSync(join(tmpdir(), "vault-games-bad-"));
+  mkdirSync(join(r, "src", "data", "releases"), { recursive: true });
+  writeFileSync(join(r, "src", "data", "releases", "bad.json"), content);
+  dirs.push(r);
+  return r;
+}
+const dirs: string[] = [];
+afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })));
+
+test("url không phải https thì lỗi, nêu file và trường", () => {
+  const root = rootWith(JSON.stringify([{ ...rel("1.0.0"), url: "http://x/y.zip" }]));
+  expect(() => loadReleases("bad", { root })).toThrow(/bad\.json.*url/);
+});
+
+test("sha256 sai thì lỗi, nêu file và trường", () => {
+  const root = rootWith(JSON.stringify([{ ...rel("1.0.0"), sha256: "A".repeat(64) }]));
+  expect(() => loadReleases("bad", { root })).toThrow(/bad\.json.*sha256/);
+});
+
+test("không phải mảng thì lỗi; BOM được bỏ qua", () => {
+  expect(() => loadReleases("bad", { root: rootWith("{}") })).toThrow(/bad\.json/);
+  expect(loadReleases("bad", { root: rootWith("﻿" + JSON.stringify([rel("1.0.0")])) })).toHaveLength(1);
+});
+
+test("file mẫu lad8 hợp lệ", () => {
+  expect(loadReleases("lad8-infinite-wealth", { fixtures: true })).toHaveLength(2);
+});
+
 test("hoàn thành mà không có bản tải thì lỗi, nêu tên game", () => {
   expect(() => validateGame({ id: "zelda-oot3d", status: "hoan-thanh" }, [])).toThrow(/zelda-oot3d/);
   expect(() => validateGame({ id: "x", status: "dang-dich" }, [])).not.toThrow();

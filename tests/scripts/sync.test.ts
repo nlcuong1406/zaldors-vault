@@ -120,6 +120,12 @@ test("game mồ côi và dự án hỏng không làm sập", async () => {
   expect(existsSync(join(repoRoot, "src/content/games/game-b.md"))).toBe(false);
 });
 
+test("thiếu thư mục projects thì lỗi rõ ràng, không ghi gì", () => {
+  const empty = mkdtempSync(join(tmpdir(), "vault-novh-"));
+  dirs.push(empty);
+  expect(() => runSync({ vhRoot: empty, repoRoot })).toThrow(/Không tìm thấy thư mục projects trong VH_ROOT=/);
+});
+
 test("không ghi gì vào VH", () => {
   const snap = snapshotTree(vhRoot);
   runSync({ vhRoot, repoRoot });

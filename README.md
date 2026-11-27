@@ -68,7 +68,7 @@ Ví dụ phát hành LAD8 v0.9.1.
    npm run release -- lad8-infinite-wealth 0.9.1
    ```
 
-   Lệnh tìm đúng một file zip trong `release/` của dự án có tên chứa `v0.9.1`, chạy các quy tắc chặn, tính SHA-256, so với file `.sha256` bên cạnh (nếu có), rồi in tên file, dung lượng, mã băm, số file và 20 file lớn nhất.
+   Lệnh chọn file zip trong `release/` của dự án theo mã phiên bản: tên phải chứa `v0.9.1`, trước chữ `v` không được là chữ hay số, và sau số phiên bản không được còn chữ số hay `.<số>` (nên 0.9.1 không khớp v0.9.10). Phải có đúng một file khớp, không thì lệnh dừng. Sau đó lệnh chạy các quy tắc chặn, tính SHA-256, so với file `.zip.sha256` bên cạnh (nếu có), rồi in tên file, dung lượng, mã băm, số file và 20 file lớn nhất. Nếu file `.zip.sha256` ghi mã khác hoặc không đọc được thì lệnh dừng với mã 1, kể cả khi chỉ xem trước.
 
    Cờ tùy chọn:
    - `--notes <file>`: file ghi chú. Nếu không có thì lấy `PHAT-HANH.txt` trong gói; không có cả hai thì lệnh dừng.
@@ -102,7 +102,7 @@ Một số lưu ý khác:
 Không có cờ nào vượt qua được các quy tắc này. Bản bị chặn sẽ in `[tên quy tắc]` cùng chi tiết và dừng với mã 1.
 
 1. `internal-name`: tên file zip chứa `internal` (không phân biệt hoa thường).
-2. `original-file`: một file ở cấp ngoài cùng của zip có SHA-256 trùng với một mục trong `inputs` của `project.json`, tức là file game gốc.
+2. `original-file`: một file bất kỳ trong zip, ở thư mục nào cũng được, có SHA-256 trùng với một mục trong `inputs` của `project.json`, tức là file game gốc.
 3. `no-distribute-notice`: một file văn bản ở gốc gói (`.txt`, `.md`, `.json`) chứa "không phân phối" hoặc "nội bộ" (so sánh bỏ dấu, không phân biệt hoa thường).
 
 Lệnh cũng dừng (không phát hành) khi gói trông đáng ngờ: file văn bản không phải UTF-8 hay UTF-16 có BOM, văn bản chứa ký tự NUL, tên mục trong zip bị trùng (kể cả khác hoa thường), hoặc tên mục lạ (rỗng, bắt đầu bằng `/`, phần nào kết thúc bằng dấu chấm hoặc dấu cách). Lý do là nếu không đọc chắc chắn được thì không công khai.
@@ -111,7 +111,7 @@ Lệnh cũng dừng (không phát hành) khi gói trông đáng ngờ: file văn
 
 ### Giới hạn đã biết
 
-- Quy tắc file gốc chỉ so các mục cấp ngoài cùng của zip. File gốc nằm lồng trong một container (ví dụ trong file `.pak`) sẽ không bị phát hiện. Người phát hành vẫn phải tự xem 20 file lớn nhất trong bản xem trước.
+- Quy tắc file gốc so từng file trong zip ở mọi độ sâu thư mục, nhưng không nhìn được vào bên trong một container đóng gói (ví dụ file `.pak`). File gốc nằm trong container như vậy sẽ không bị phát hiện. Người phát hành vẫn phải tự xem 20 file lớn nhất trong bản xem trước.
 - Quy tắc ghi chú chỉ là so khớp chuỗi con sau khi bỏ dấu. Câu như "không phân phối lại" trong một ghi chú giấy phép cũng sẽ bị chặn dù vô hại; khi đó đổi cách viết trong gói bên VH.
 
 ## Xóa tay một bản phát hành
