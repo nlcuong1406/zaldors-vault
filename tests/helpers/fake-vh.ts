@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -23,9 +23,17 @@ async function writeZip(path: string, files: Record<string, string | Buffer>): P
   await pipeline(zip.outputStream, createWriteStream(path));
 }
 
+const created: string[] = [];
+
+/** Xóa mọi thư mục tạm do makeFakeVh dựng; gọi trong afterAll. */
+export async function cleanupFakeVh(): Promise<void> {
+  await Promise.all(created.splice(0).map((d) => rm(d, { recursive: true, force: true })));
+}
+
 /** Dựng thư mục VH giả trong thư mục tạm của hệ điều hành; trả về vhRoot. */
 export async function makeFakeVh(spec: Spec): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "fake-vh-"));
+  created.push(root);
   for (const [id, p] of Object.entries(spec)) {
     const dir = join(root, "projects", id);
     await mkdir(dir, { recursive: true });

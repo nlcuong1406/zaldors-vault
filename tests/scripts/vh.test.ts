@@ -1,8 +1,10 @@
 import { mkdir } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { beforeAll, expect, test } from "vitest";
+import { afterAll, beforeAll, expect, test } from "vitest";
 import { findReleaseZip, listProjectIds, loadProject } from "../../scripts/lib/vh";
-import { makeFakeVh } from "../helpers/fake-vh";
+import { cleanupFakeVh, makeFakeVh } from "../helpers/fake-vh";
+
+afterAll(cleanupFakeVh);
 
 const base = { title: "Game Thử", platform: "pc", edition: "base" };
 let root: string;
@@ -34,6 +36,14 @@ beforeAll(async () => {
         "project.json": "﻿" + JSON.stringify({ id: "co-bom", ...base }).replace(/,/g, ",\r\n"),
       },
     },
+    "chi-v10": {
+      projectJson: { id: "chi-v10", ...base },
+      zips: { "G-v0.9.10.zip": { "a.txt": "a" } },
+    },
+    "noi-bo": {
+      projectJson: { id: "noi-bo", ...base },
+      zips: { "SB-VH-v0.3-internal.zip": { "a.txt": "a" }, "Xdev1.0.zip": { "a.txt": "b" } },
+    },
     "khong-release": { projectJson: { id: "khong-release", ...base } },
   });
   await mkdir(join(root, "projects", "chi-thu-muc-rong"), { recursive: true });
@@ -61,7 +71,7 @@ test("loadProject báo id khi thiếu file hoặc JSON hỏng", () => {
 
 test("listProjectIds chỉ lấy thư mục có project.json, sắp a-z", async () => {
   const ids = listProjectIds(root);
-  expect(ids).toEqual(["co-bom", "game-thu", "hai-zip", "hong", "khong-inputs", "khong-release"]);
+  expect(ids).toEqual(["chi-v10", "co-bom", "game-thu", "hai-zip", "hong", "khong-inputs", "khong-release", "noi-bo"]);
   expect(listProjectIds(await makeFakeVh({}))).toEqual([]);
 });
 
@@ -79,6 +89,20 @@ test("bỏ qua thư mục giải nén và file .sha256", () => {
 test("hai zip cùng phiên bản thì dừng", () => {
   const p = loadProject(root, "hai-zip");
   expect(() => findReleaseZip(p, "1.0")).toThrow(/nhiều hơn một/);
+});
+
+test("0.9.1 không khớp v0.9.10", () => {
+  expect(() => findReleaseZip(loadProject(root, "chi-v10"), "0.9.1")).toThrow(/không tìm thấy/);
+});
+
+test("0.3 khớp bản -internal; 1.0 không khớp Xdev1.0.zip", () => {
+  const p = loadProject(root, "noi-bo");
+  expect(basename(findReleaseZip(p, "0.3"))).toBe("SB-VH-v0.3-internal.zip");
+  expect(() => findReleaseZip(p, "1.0")).toThrow(/không tìm thấy/);
+});
+
+test("phiên bản trống bị từ chối", () => {
+  expect(() => findReleaseZip(loadProject(root, "noi-bo"), "  ")).toThrow(/trống/);
 });
 
 test("thiếu thư mục release thì báo không tìm thấy", () => {

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { stripBom } from "./text";
 import type { VhProject } from "./types";
 
@@ -33,7 +33,7 @@ export function loadProject(vhRoot: string, id: string): VhProject {
     platform: String(raw?.platform ?? ""),
     edition: String(raw?.edition ?? ""),
     inputHashes,
-    releaseDir: join(projectDir, "release"),
+    releaseDir: resolve(projectDir, "release"),
   };
 }
 
@@ -42,6 +42,7 @@ function escapeRegex(s: string): string {
 }
 
 export function findReleaseZip(project: VhProject, version: string): string {
+  if (!version.trim()) throw new Error(`Dự án "${project.id}": phiên bản trống`);
   let names: string[] = [];
   if (existsSync(project.releaseDir)) {
     names = readdirSync(project.releaseDir, { withFileTypes: true })
@@ -49,7 +50,7 @@ export function findReleaseZip(project: VhProject, version: string): string {
       .map((e) => e.name)
       .sort();
   }
-  const re = new RegExp(`v${escapeRegex(version)}(?!\\d|\\.\\d)`);
+  const re = new RegExp(`(?<![A-Za-z0-9])v${escapeRegex(version)}(?!\\d|\\.\\d)`);
   const hits = names.filter((n) => re.test(n));
   if (hits.length === 0) {
     throw new Error(`Dự án "${project.id}": không tìm thấy file zip cho phiên bản ${version} trong ${project.releaseDir}`);

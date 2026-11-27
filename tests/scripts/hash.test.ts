@@ -1,7 +1,7 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, test } from "vitest";
+import { afterAll, expect, test } from "vitest";
 import { parseSha256File, sha256File } from "../../scripts/lib/hash";
 import { foldVietnamese, stripBom } from "../../scripts/lib/text";
 
@@ -22,8 +22,18 @@ test("stripBom bỏ BOM đầu chuỗi", () => {
   expect(stripBom("abc")).toBe("abc");
 });
 
+test("chuỗi 65 ký tự hex không phải mã băm", () => {
+  expect(parseSha256File("a".repeat(65))).toBeNull();
+});
+
+const dirs: string[] = [];
+afterAll(async () => {
+  await Promise.all(dirs.map((d) => rm(d, { recursive: true, force: true })));
+});
+
 test("sha256File khớp giá trị đã biết", async () => {
   const dir = await mkdtemp(join(tmpdir(), "hash-"));
+  dirs.push(dir);
   const p = join(dir, "abc.txt");
   await writeFile(p, "abc");
   expect(await sha256File(p)).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
