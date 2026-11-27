@@ -1,6 +1,6 @@
 # Zaldor's Vault: bản thiết kế
 
-Ngày: 2026-11-27. Trạng thái: chờ duyệt.
+Ngày: 2026-11-27. Trạng thái: người dùng đã duyệt ngày 2026-11-27.
 
 Ký hiệu: **[Bạn chọn]** là điều người dùng đã quyết trong buổi trao đổi.
 **[Đề xuất]** là điều người viết tự chọn, người dùng chưa xác nhận.
