@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "version": "0.3",
+    "date": "2026-11-28",
+    "fileName": "StellarBlade-VH-v0.3.zip",
+    "sizeBytes": 1262324,
+    "sha256": "f2ecb1de9794d664edef48a8432e9619b869982288e742afadc7669188ce4b5d",
+    "url": "https://github.com/nlcuong1406/zaldors-vault/releases/download/stellar-blade-v0.3/StellarBlade-VH-v0.3.zip",
+    "gameBuild": "26123051",
+    "notes": "Stellar Blade Việt hóa v0.3, bản công khai đầu tiên.\n\n- Dịch toàn bộ văn bản trong game: giao diện, hệ thống, vật phẩm, thoại, nhiệm vụ, nhật ký, hồ sơ, bộ sưu tập và DLC (NIKKE, NieR).\n- Font tiếng Việt mã nguồn mở: Chakra Petch, Barlow Condensed, Barlow, Saira Condensed.\n- Dành cho bản Steam build 26123051 (phiên bản 1.5.0), Windows x64. Ngôn ngữ game để English.\n- Thay thế các bản thử trước (VH_v01_P.pak, VH_v02_P.pak, VH_v03_P.pak): bộ cài tự xử lý, cài tay thì xóa các file đó khỏi ~mods.\n- Đã kiểm tra tĩnh và thử cài, gỡ trên thư mục riêng. Chưa chơi thử toàn bộ trong game."
+  }
+]
