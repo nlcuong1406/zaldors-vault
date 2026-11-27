@@ -1,0 +1,61 @@
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { stripBom } from "./text";
+import type { VhProject } from "./types";
+
+export function listProjectIds(vhRoot: string): string[] {
+  const dir = join(vhRoot, "projects");
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(dir, e.name, "project.json")))
+    .map((e) => e.name)
+    .sort();
+}
+
+export function loadProject(vhRoot: string, id: string): VhProject {
+  const projectDir = join(vhRoot, "projects", id);
+  const file = join(projectDir, "project.json");
+  if (!existsSync(file)) throw new Error(`Dự án "${id}": thiếu project.json (${file})`);
+  let raw: any;
+  try {
+    raw = JSON.parse(stripBom(readFileSync(file, "utf8")));
+  } catch (e) {
+    throw new Error(`Dự án "${id}": project.json hỏng (${(e as Error).message})`);
+  }
+  const inputs: unknown[] = Array.isArray(raw?.inputs) ? raw.inputs : [];
+  const inputHashes = inputs
+    .map((i) => (i as { sha256?: unknown } | null)?.sha256)
+    .filter((h): h is string => typeof h === "string" && h.length > 0)
+    .map((h) => h.toLowerCase());
+  return {
+    id: String(raw?.id ?? id),
+    title: String(raw?.title ?? ""),
+    platform: String(raw?.platform ?? ""),
+    edition: String(raw?.edition ?? ""),
+    inputHashes,
+    releaseDir: join(projectDir, "release"),
+  };
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function findReleaseZip(project: VhProject, version: string): string {
+  let names: string[] = [];
+  if (existsSync(project.releaseDir)) {
+    names = readdirSync(project.releaseDir, { withFileTypes: true })
+      .filter((e) => e.isFile() && /\.zip$/i.test(e.name))
+      .map((e) => e.name)
+      .sort();
+  }
+  const re = new RegExp(`v${escapeRegex(version)}(?!\\d|\\.\\d)`);
+  const hits = names.filter((n) => re.test(n));
+  if (hits.length === 0) {
+    throw new Error(`Dự án "${project.id}": không tìm thấy file zip cho phiên bản ${version} trong ${project.releaseDir}`);
+  }
+  if (hits.length > 1) {
+    throw new Error(`Dự án "${project.id}": có nhiều hơn một file zip cho phiên bản ${version}: ${hits.join(", ")}`);
+  }
+  return join(project.releaseDir, hits[0]);
+}
