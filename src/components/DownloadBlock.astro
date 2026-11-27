@@ -1,0 +1,95 @@
+---
+import type { Release } from "../../scripts/lib/types";
+import { formatBytes, formatDate } from "../lib/format";
+
+interface Props {
+  latest: Release | null;
+  edition: string;
+}
+
+const { latest, edition } = Astro.props;
+---
+
+<section class="block" aria-labelledby="tai-ve">
+  <h2 id="tai-ve">Tải về</h2>
+  {
+    latest ? (
+      <>
+        <p class="meta">
+          Phiên bản {latest.version} · {formatDate(latest.date)} · {formatBytes(latest.sizeBytes)}
+        </p>
+        <p class="sha">
+          <span class="label">SHA-256</span>
+          <code>{latest.sha256}</code>
+        </p>
+        <a class="button" href={latest.url}>
+          Tải bản v{latest.version}
+        </a>
+        <p class="support">
+          Hỗ trợ: {edition}, bản game {latest.gameBuild}
+        </p>
+      </>
+    ) : (
+      <p class="empty">Chưa có bản phát hành.</p>
+    )
+  }
+</section>
+
+<style>
+  .block {
+    background: var(--bg-block);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+  }
+  h2 {
+    margin: 0 0 0.75rem;
+  }
+  p {
+    margin: 0 0 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .meta {
+    color: var(--text);
+  }
+  .sha {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .label {
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  code {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+  .button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #d9b25f;
+    color: #16130e;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.375rem;
+  }
+  .button:hover {
+    filter: brightness(1.1);
+  }
+  .button:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 3px;
+  }
+  .support {
+    margin: 0.75rem 0 0;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+  .empty {
+    margin: 0;
+    color: var(--muted);
+  }
+</style>

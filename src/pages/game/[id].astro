@@ -1,0 +1,178 @@
+---
+import { Image } from "astro:assets";
+import { render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import ProgressBar from "../../components/ProgressBar.astro";
+import DownloadBlock from "../../components/DownloadBlock.astro";
+import Changelog from "../../components/Changelog.astro";
+import ReportBug from "../../components/ReportBug.astro";
+import Comments from "../../components/Comments.astro";
+import { getGames, STATUS_LABEL } from "../../lib/games";
+
+export async function getStaticPaths() {
+  const games = await getGames();
+  return games.map((game) => ({ params: { id: game.entry.data.id }, props: game }));
+}
+
+const { entry, releases, latest } = Astro.props;
+const g = entry.data;
+const { Content } = await render(entry);
+---
+
+<Base title={g.title} description={g.tagline}>
+  <article>
+    <header class="hero">
+      <div class="cover">
+        {
+          g.cover ? (
+            <Image src={g.cover} alt="" widths={[480, 960]} sizes="(min-width: 640px) 20rem, 100vw" />
+          ) : (
+            <span class="placeholder">{g.title}</span>
+          )
+        }
+      </div>
+      <div class="info">
+        <h1>{g.title}</h1>
+        <p class="platform">{g.platform}</p>
+        <p class="status">{STATUS_LABEL[g.status]} · {g.progress}%</p>
+        <ProgressBar value={g.progress} label="Tiến độ dịch" />
+      </div>
+    </header>
+
+    <DownloadBlock latest={latest} edition={g.edition} />
+
+    {
+      g.screenshots.length > 0 && (
+        <section aria-labelledby="anh">
+          <h2 id="anh">Ảnh trong game</h2>
+          <ul class="shots">
+            {g.screenshots.map((shot) => (
+              <li>
+                <Image src={shot} alt="" widths={[480, 960]} sizes="(min-width: 640px) 30rem, 100vw" />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <section class="body">
+      <Content />
+    </section>
+
+    <Changelog releases={releases} />
+
+    {
+      g.credits.length > 0 && (
+        <section aria-labelledby="credit">
+          <h2 id="credit">Credit</h2>
+          <ul class="credits">
+            {g.credits.map((c) => (
+              <li>
+                <strong>{c.name}</strong> · {c.role}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <ReportBug title={g.title} version={latest?.version ?? null} />
+
+    <Comments id={g.id} />
+  </article>
+</Base>
+
+<style>
+  article {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  article :global(section > h2),
+  .body :global(h2) {
+    margin: 0 0 0.75rem;
+  }
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .hero {
+      grid-template-columns: 20rem minmax(0, 1fr);
+      align-items: center;
+    }
+  }
+  .cover {
+    aspect-ratio: 16 / 9;
+    background: var(--bg-block);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .placeholder {
+    padding: 1rem;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--accent);
+    overflow-wrap: anywhere;
+  }
+  .info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    overflow-wrap: anywhere;
+  }
+  .platform {
+    margin: 0;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+  .status {
+    margin: 0;
+  }
+  .shots {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .shots :global(img) {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .shots {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .body {
+    overflow-wrap: anywhere;
+  }
+  .credits {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+</style>

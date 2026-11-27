@@ -1,0 +1,62 @@
+---
+import type { Release } from "../../scripts/lib/types";
+import { formatDate } from "../lib/format";
+
+interface Props {
+  releases: Release[];
+}
+
+const { releases } = Astro.props;
+---
+
+{
+  releases.length > 0 && (
+    <section aria-labelledby="changelog">
+      <h2 id="changelog">Nhật ký thay đổi</h2>
+      <ol>
+        {releases.map((r) => (
+          <li>
+            <h3>
+              v{r.version} <span class="date">{formatDate(r.date)}</span>
+            </h3>
+            {r.notes && <p class="notes">{r.notes}</p>}
+            <a href={r.url}>Tải bản v{r.version}</a>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  li {
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+  }
+  h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1.25rem;
+  }
+  .date {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .notes {
+    margin: 0 0 0.5rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  a {
+    color: var(--accent);
+  }
+</style>

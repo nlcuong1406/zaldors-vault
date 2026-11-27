@@ -1,0 +1,43 @@
+---
+import config from "../../vault.config";
+import { issueUrl } from "../lib/links";
+
+interface Props {
+  title: string;
+  version: string | null;
+}
+
+const { title, version } = Astro.props;
+const href = issueUrl(config.repo, { title }, version);
+---
+
+{
+  href && (
+    <p>
+      <a class="report" href={href} rel="noopener">
+        Báo lỗi dịch
+      </a>
+    </p>
+  )
+}
+
+<style>
+  p {
+    margin: 0;
+  }
+  .report {
+    display: inline-block;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: 0.375rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .report:hover {
+    background: var(--bg-block);
+  }
+  .report:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+</style>
