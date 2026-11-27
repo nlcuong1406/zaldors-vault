@@ -19,7 +19,9 @@ function openStream(zf: yauzl.ZipFile, entry: yauzl.Entry): Promise<NodeJS.Reada
 }
 
 function normalisePath(name: string): string {
-  return name.replace(/\\/g, "/");
+  let p = name.replace(/\\/g, "/");
+  while (p.startsWith("./")) p = p.slice(2);
+  return p;
 }
 
 /** Chạy fn cho từng mục (không phải thư mục) của zip; luôn đóng zip. */
@@ -33,7 +35,10 @@ async function forEachFile(zipPath: string, fn: (zf: yauzl.ZipFile, entry: yauzl
         const path = normalisePath(entry.fileName);
         const problem = yauzl.validateFileName(entry.fileName);
         if (problem) return reject(new Error(`zip: tên mục không hợp lệ (${problem}): ${entry.fileName}`));
-        if (path.endsWith("/")) return zf.readEntry();
+        if (path.endsWith("/")) {
+          if (entry.uncompressedSize > 0) return reject(new Error(`zip: mục thư mục có dữ liệu: ${entry.fileName}`));
+          return zf.readEntry();
+        }
         fn(zf, entry, path).then(() => zf.readEntry(), reject);
       });
       zf.readEntry();
@@ -45,7 +50,11 @@ async function forEachFile(zipPath: string, fn: (zf: yauzl.ZipFile, entry: yauzl
 
 export async function listEntries(zipPath: string): Promise<ZipEntry[]> {
   const out: ZipEntry[] = [];
+  const seen = new Set<string>();
   await forEachFile(zipPath, async (zf, entry, path) => {
+    const key = path.toLowerCase();
+    if (seen.has(key)) throw new Error(`zip: trùng tên mục: ${path}`);
+    seen.add(key);
     const stream = await openStream(zf, entry);
     const hash = createHash("sha256");
     let size = 0;
@@ -76,6 +85,22 @@ export function packageRoot(entries: ZipEntry[]): string {
   return `${top}/`;
 }
 
+/** UTF-16 (có BOM) hoặc UTF-8 nghiêm ngặt; byte không hợp lệ thì ném lỗi (không đoán bảng mã cũ). */
+function decodeText(buf: Buffer, path: string): string {
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) return stripBom(buf.subarray(2).toString("utf16le"));
+  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
+    const body = Buffer.from(buf.subarray(2));
+    if (body.length % 2 !== 0) throw new Error(`zip: ${path} không phải UTF-16 hợp lệ`);
+    body.swap16();
+    return body.toString("utf16le");
+  }
+  try {
+    return stripBom(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(buf));
+  } catch {
+    throw new Error(`zip: ${path} không phải UTF-8 hợp lệ`);
+  }
+}
+
 export async function readRootTexts(zipPath: string, entries: ZipEntry[]): Promise<Record<string, string>> {
   const root = packageRoot(entries);
   const wanted = new Set<string>();
@@ -101,7 +126,7 @@ export async function readRootTexts(zipPath: string, entries: ZipEntry[]): Promi
       stream.on("error", reject);
       stream.on("end", () => resolve());
     });
-    out[path.slice(root.length)] = stripBom(Buffer.concat(chunks).toString("utf8"));
+    out[path.slice(root.length)] = decodeText(Buffer.concat(chunks), path);
   });
   return out;
 }
