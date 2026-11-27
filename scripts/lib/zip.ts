@@ -21,6 +21,7 @@ function openStream(zf: yauzl.ZipFile, entry: yauzl.Entry): Promise<NodeJS.Reada
 function normalisePath(name: string): string {
   let p = name.replace(/\\/g, "/");
   while (p.startsWith("./")) p = p.slice(2);
+  while (p.includes("/./")) p = p.replace(/\/(\.\/)+/g, "/");
   return p;
 }
 
@@ -32,12 +33,16 @@ async function forEachFile(zipPath: string, fn: (zf: yauzl.ZipFile, entry: yauzl
       zf.on("error", reject);
       zf.on("end", () => resolve());
       zf.on("entry", (entry: yauzl.Entry) => {
+        const isDir = entry.fileName.replace(/\\/g, "/").endsWith("/");
         const path = normalisePath(entry.fileName);
         const problem = yauzl.validateFileName(entry.fileName);
         if (problem) return reject(new Error(`zip: tên mục không hợp lệ (${problem}): ${entry.fileName}`));
-        if (path.endsWith("/")) {
+        if (isDir) {
           if (entry.uncompressedSize > 0) return reject(new Error(`zip: mục thư mục có dữ liệu: ${entry.fileName}`));
           return zf.readEntry();
+        }
+        if (path === "" || path.startsWith("/") || path === "." || path.endsWith("/.")) {
+          return reject(new Error(`zip: đường dẫn mục không hợp lệ: ${entry.fileName}`));
         }
         fn(zf, entry, path).then(() => zf.readEntry(), reject);
       });
@@ -87,7 +92,17 @@ export function packageRoot(entries: ZipEntry[]): string {
 
 /** UTF-16 (có BOM) hoặc UTF-8 nghiêm ngặt; byte không hợp lệ thì ném lỗi (không đoán bảng mã cũ). */
 function decodeText(buf: Buffer, path: string): string {
-  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) return stripBom(buf.subarray(2).toString("utf16le"));
+  const text = decodeRaw(buf, path);
+  if (text.includes("\u0000")) throw new Error(`zip: ${path} chứa ký tự NUL (có thể là UTF-16 không BOM)`);
+  return text;
+}
+
+function decodeRaw(buf: Buffer, path: string): string {
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
+    const body = buf.subarray(2);
+    if (body.length % 2 !== 0) throw new Error(`zip: ${path} không phải UTF-16 hợp lệ`);
+    return stripBom(body.toString("utf16le"));
+  }
   if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
     const body = Buffer.from(buf.subarray(2));
     if (body.length % 2 !== 0) throw new Error(`zip: ${path} không phải UTF-16 hợp lệ`);

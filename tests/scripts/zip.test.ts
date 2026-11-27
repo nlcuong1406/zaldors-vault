@@ -93,6 +93,38 @@ describe("listEntries hardening", () => {
   });
 });
 
+describe("./ entries", () => {
+  test("mục thư mục ./ không làm mất gốc gói; ghi chú vẫn bị chặn", async () => {
+    const zip = await makeZip({ "G-v1/README.txt": "nội bộ" }, ["xx"]);
+    await patchNames(zip, [["xx/", "./"], ["xx", "./"]]);
+    const entries = await listEntries(zip);
+    expect(entries.map((e) => e.path)).toEqual(["G-v1/README.txt"]);
+    const texts = await readRootTexts(zip, entries);
+    expect(checkPackage({ zipFileName: "a.zip", entries, inputHashes: [], rootTexts: texts }).map((b) => b.rule)).toEqual(["no-distribute-notice"]);
+  });
+  test("G-v1/./README.txt được gộp thành G-v1/README.txt", async () => {
+    const zip = await makeZip({ "G-v1/x/README.txt": "a" });
+    await patchNames(zip, [["x/", "./"]]);
+    expect((await listEntries(zip)).map((e) => e.path)).toEqual(["G-v1/README.txt"]);
+  });
+  test(".//x bị từ chối", async () => {
+    const zip = await makeZip({ "abc/x": "a" });
+    await patchNames(zip, [["abc/", ".//"]]);
+    await expect(listEntries(zip)).rejects.toThrow(/không hợp lệ/);
+  });
+});
+
+describe("NUL và UTF-16 lẻ", () => {
+  test("UTF-16 không BOM (xen kẽ NUL) bị từ chối", async () => {
+    const zip = await makeZip({ "README.txt": Buffer.from("NOI BO", "utf16le") });
+    await expect(readRootTexts(zip, await listEntries(zip))).rejects.toThrow(/NUL/);
+  });
+  test("UTF-16LE có BOM nhưng độ dài lẻ bị từ chối", async () => {
+    const zip = await makeZip({ "README.txt": Buffer.from([0xff, 0xfe, 0x4e, 0x00, 0x4f]) });
+    await expect(readRootTexts(zip, await listEntries(zip))).rejects.toThrow(/UTF-16/);
+  });
+});
+
 describe("encodings", () => {
   test("UTF-16LE có BOM được giải mã và bị chặn", async () => {
     const body = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from("Bản Nội bộ", "utf16le")]);
