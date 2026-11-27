@@ -1,8 +1,53 @@
 ---
 import Base from "../layouts/Base.astro";
+import GameCard from "../components/GameCard.astro";
+import { getGames } from "../lib/games";
+
+const games = await getGames();
 ---
 
 <Base title="Zaldor's Vault" description="Kho bản vá ngôn ngữ tiếng Việt cho game.">
-  <h1>Kho game</h1>
-  <p>Trang đang được xây dựng.</p>
+  <h1>Những bản Việt hóa được cất giữ cẩn thận</h1>
+  <p class="lead">{games.length} game · dịch bởi Zaldor (Vergilize) · miễn phí</p>
+  <ul class="grid">
+    {
+      games.map(({ entry, latest }) => (
+        <li>
+          <GameCard entry={entry} latest={latest} />
+        </li>
+      ))
+    }
+  </ul>
 </Base>
+
+<style>
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+  }
+  .lead {
+    margin: 0 0 2rem;
+    color: var(--muted);
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .grid > li {
+    min-width: 0;
+  }
+  @media (min-width: 640px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 960px) {
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>
