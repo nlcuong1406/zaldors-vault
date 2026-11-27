@@ -1,0 +1,73 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Hướng dẫn · Zaldor's Vault" description="Bản vá là gì, cách cài và cách kiểm tra mã băm SHA-256.">
+  <article>
+    <h1>Hướng dẫn</h1>
+
+    <section>
+      <h2>Bản vá là gì</h2>
+      <p>
+        Bản vá chỉ chứa các file đã sửa để game hiện tiếng Việt. Nó không phải là game.
+      </p>
+      <p>
+        Vì vậy bạn cần có bản game gốc hợp lệ trên máy. Bản vá sẽ không chạy nếu thiếu game.
+      </p>
+    </section>
+
+    <section>
+      <h2>Các bước cài chung</h2>
+      <ol>
+        <li>Mở trang của game bạn muốn và tải file bản vá mới nhất.</li>
+        <li>Kiểm tra mã băm SHA-256 của file vừa tải (xem mục dưới).</li>
+        <li>Làm theo phần hướng dẫn cài đặt ngay trên trang của game đó. Mỗi game cài một kiểu.</li>
+        <li>Nếu có lỗi dịch, dùng nút báo lỗi trên trang game.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Kiểm tra SHA-256 trên Windows</h2>
+      <p>
+        Mã băm giúp bạn chắc file tải về không bị hỏng hay bị đổi. Mở PowerShell trong thư mục chứa file và chạy:
+      </p>
+      <pre><code>Get-FileHash &lt;tên file&gt; -Algorithm SHA256</code></pre>
+      <p>
+        So chuỗi ở cột Hash với SHA-256 ghi trên trang của game. Hai chuỗi phải giống hệt nhau. Nếu khác, hãy tải lại file.
+      </p>
+    </section>
+  </article>
+</Base>
+
+<style>
+  article {
+    max-width: 44rem;
+  }
+  h1 {
+    margin: 0 0 1.5rem;
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+  }
+  h2 {
+    margin: 2rem 0 0.75rem;
+    color: var(--accent);
+    font-size: 1.5rem;
+  }
+  ol {
+    padding-left: 1.5rem;
+  }
+  li {
+    margin-bottom: 0.5rem;
+  }
+  pre {
+    margin: 1rem 0;
+    padding: 1rem;
+    overflow-x: auto;
+    background: var(--bg-block);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+  }
+  code {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.9rem;
+  }
+</style>

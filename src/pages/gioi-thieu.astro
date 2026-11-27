@@ -1,0 +1,50 @@
+---
+import Base from "../layouts/Base.astro";
+import Donate from "../components/Donate.astro";
+---
+
+<Base title="Giới thiệu · Zaldor's Vault" description="Về người dịch và những bản Việt hóa trong kho.">
+  <article>
+    <h1>Giới thiệu</h1>
+
+    <section>
+      <h2>Zaldor (Vergilize)</h2>
+      <p class="placeholder">
+        Đây là chữ giữ chỗ. Đoạn giới thiệu thật về Zaldor (Vergilize) sẽ do chủ trang viết sau. Hiện chưa có nội dung.
+      </p>
+    </section>
+
+    <section>
+      <h2>Lưu ý</h2>
+      <p>
+        Zaldor's Vault chỉ phát hành bản vá ngôn ngữ. Bạn cần có bản game gốc hợp lệ. Trang không liên kết với nhà phát hành nào.
+      </p>
+      <p>
+        Tên game và nhãn hiệu thuộc về chủ sở hữu của chúng.
+      </p>
+    </section>
+
+    <Donate />
+  </article>
+</Base>
+
+<style>
+  article {
+    max-width: 44rem;
+  }
+  h1 {
+    margin: 0 0 1.5rem;
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+  }
+  h2 {
+    margin: 2rem 0 0.75rem;
+    color: var(--accent);
+    font-size: 1.5rem;
+  }
+  .placeholder {
+    color: var(--muted);
+  }
+  article > :global(.donate) {
+    margin-top: 2rem;
+  }
+</style>
