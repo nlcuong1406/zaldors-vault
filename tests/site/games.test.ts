@@ -80,6 +80,7 @@ test("useFixtures: bật theo VAULT_FIXTURES, cấm khi build Cloudflare Pages",
   expect(useFixtures({ VAULT_FIXTURES: "1" })).toBe(true);
   expect(useFixtures({ CF_PAGES: "1" })).toBe(false);
   expect(() => useFixtures({ VAULT_FIXTURES: "1", CF_PAGES: "1" })).toThrow(/VAULT_FIXTURES/);
+  expect(() => useFixtures({ VAULT_FIXTURES: "1", WORKERS_CI: "1" })).toThrow(/VAULT_FIXTURES/);
 });
 
 test("hoàn thành mà không có bản tải thì lỗi, nêu tên game", () => {

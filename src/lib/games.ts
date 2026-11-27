@@ -68,9 +68,10 @@ export function validateGame(g: { id: string; status: string }, releases: Releas
 
 export function useFixtures(env: Record<string, string | undefined>): boolean {
   const on = env.VAULT_FIXTURES === "1";
-  if (on && env.CF_PAGES) {
+  // CF_PAGES: build của Cloudflare Pages. WORKERS_CI: build của Cloudflare Workers.
+  if (on && (env.CF_PAGES || env.WORKERS_CI)) {
     throw new Error(
-      "VAULT_FIXTURES=1 đang bật trong lúc build trên Cloudflare Pages: dữ liệu mẫu không được dùng cho bản build thật. Xóa biến VAULT_FIXTURES khỏi cài đặt Cloudflare Pages.",
+      "VAULT_FIXTURES=1 đang bật trong lúc build trên Cloudflare: dữ liệu mẫu không được dùng cho bản build thật. Xóa biến VAULT_FIXTURES khỏi cài đặt build trên Cloudflare.",
     );
   }
   return on;

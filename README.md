@@ -127,14 +127,17 @@ Làm lần lượt theo thứ tự:
 6. Chạy lại lệnh ở bước 4 kèm `--confirm`.
 7. Mở link tải trên trang Release, tải file về, chạy `Get-FileHash <file>` (SHA-256) và so với mã băm đã in.
 8. Commit và push file JSON trong `src/data/releases/`.
-9. Chờ Cloudflare Pages build xong, rồi bấm thử nút tải trên trang thật.
+9. Chờ Cloudflare build xong, rồi bấm thử nút tải trên trang thật.
 
-### Cài đặt Cloudflare Pages
+### Cài đặt Cloudflare
+
+Trang chạy trên một Cloudflare Worker chỉ phục vụ file tĩnh, cấu hình ở `wrangler.jsonc` (tên Worker `zaldors-vault`, thư mục `dist`, đường dẫn sai trả `404.html`). Có file này thì `npx wrangler deploy` không tự sửa dự án.
 
 - Build command: `npm run build`
-- Output directory: `dist`
+- Deploy command: `npx wrangler deploy`
 - Node 24: đặt biến môi trường `NODE_VERSION=24`
-- Không đặt `VAULT_FIXTURES`. Nếu biến này bằng `1` trong lúc build trên Cloudflare Pages (có `CF_PAGES`), build sẽ báo lỗi và dừng.
+- Không đặt `VAULT_FIXTURES`. Nếu biến này bằng `1` trong lúc build trên Cloudflare (có `WORKERS_CI` hoặc `CF_PAGES`), build sẽ báo lỗi và dừng.
+- Máy dùng npm 11 còn Cloudflare dùng npm 10. Sau khi thêm hoặc đổi gói, chạy `npx -y npm@10.9.2 install --package-lock-only --ignore-scripts` trước khi push, nếu không `npm ci` trên Cloudflare sẽ báo lock lệch.
 
 ## Xóa tay một bản phát hành
 
@@ -151,7 +154,7 @@ Những việc này không cản việc dựng và chạy trang trên máy. Vi�
 1. Tạo tài khoản GitHub và repo công khai (đề xuất tên `zaldors-vault`), rồi điền `repo` trong `vault.config.ts`. Tạo repo và push cần bạn đồng ý.
 2. Cài `gh` để lệnh `release` tải file lên được.
 3. Bật Discussions trên repo và cài ứng dụng Giscus, rồi điền `giscus` trong `vault.config.ts` để có bình luận.
-4. Nối repo với Cloudflare Pages; thêm tên miền riêng nếu muốn.
+4. Nối repo với Cloudflare (Worker `zaldors-vault`, xem mục cài đặt Cloudflare); thêm tên miền riêng nếu muốn.
 5. Thay chữ giữ chỗ bằng ảnh chụp màn hình, số tiến độ, câu giới thiệu và hướng dẫn cài cho từng game; viết đoạn giới thiệu thật ở `/gioi-thieu/`.
 6. Xác nhận bản nào được phép công khai. Hiện chỉ LAD8 v0.9.0 và v0.9.1 qua được quy tắc chặn; Stellar Blade v0.1 đến v0.3 bị chặn. Chưa bản nào được đẩy lên khi chưa hỏi bạn.
 
