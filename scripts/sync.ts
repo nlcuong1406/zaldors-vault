@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { resolveVhRoot } from "./lib/env";
 import { readStore } from "./lib/releases-store";
 import { listProjectIds, loadProject } from "./lib/vh";
 
@@ -139,23 +140,9 @@ export function runSync(opts: { vhRoot: string; repoRoot: string }): SyncResult 
   return result;
 }
 
-function readEnvFile(repoRoot: string): Record<string, string> {
-  const file = join(repoRoot, ".env");
-  const out: Record<string, string> = {};
-  if (!existsSync(file)) return out;
-  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
-    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
-    if (!m || line.trimStart().startsWith("#")) continue;
-    let v = m[2];
-    if (/^(".*"|'.*')$/.test(v)) v = v.slice(1, -1);
-    out[m[1]] = v;
-  }
-  return out;
-}
-
 function main(): void {
   const repoRoot = process.cwd();
-  const vhRoot = process.env.VH_ROOT || readEnvFile(repoRoot).VH_ROOT || "D:\\Prjs\\VH";
+  const vhRoot = resolveVhRoot(repoRoot);
   const r = runSync({ vhRoot, repoRoot });
   console.log(`Thư mục VH: ${vhRoot}`);
   console.log(`\nĐã tạo file game (${r.created.length}):`);
