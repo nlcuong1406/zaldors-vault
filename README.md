@@ -123,7 +123,7 @@ Làm lần lượt theo thứ tự:
 2. Cài `gh` bằng `winget install --id GitHub.cli`, rồi chạy `gh auth login`.
 3. Điền `repo` (dạng `chu-so-huu/ten-repo`) trong `vault.config.ts`.
 4. Chạy `npm run release -- <id> <version>` (bản xem trước) và đọc kỹ 20 file lớn nhất.
-5. Trước lần `--confirm` đầu tiên, kiểm tra `gh` trả đúng trường mà lệnh cần, bằng cách chạy `gh release view <một tag bất kỳ đã có> --repo <repo> --json assets,isDraft`. Xác nhận kết quả có `assets[].digest` dạng `sha256:...` và có `isDraft`. Nếu `gh` cũ không có `digest` thì cập nhật `gh`.
+5. Trước lần `--confirm` đầu tiên, kiểm tra `gh` trả đúng trường mà lệnh cần, bằng cách xem bản phát hành mới nhất của một repo công khai có sẵn file tải, ví dụ `gh release view --repo cli/cli --json assets,isDraft` (repo của bạn lúc này chưa có tag nào). Xác nhận kết quả có `assets[].digest` dạng `sha256:...` và có `isDraft`. Nếu `gh` cũ không có `digest` thì cập nhật `gh`.
 6. Chạy lại lệnh ở bước 4 kèm `--confirm`.
 7. Mở link tải trên trang Release, tải file về, chạy `Get-FileHash <file>` (SHA-256) và so với mã băm đã in.
 8. Commit và push file JSON trong `src/data/releases/`.
