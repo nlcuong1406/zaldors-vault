@@ -1,0 +1,22 @@
+[
+  {
+    "version": "0.9.1",
+    "date": "2026-11-20",
+    "fileName": "lad8-infinite-wealth-vi-0.9.1.zip",
+    "sizeBytes": 14680064,
+    "sha256": "3f2a9c1d5b7e4a60c8d19e2f7b4a6c3d0e1f8a9b2c4d6e7f1a3b5c7d9e0f2a4b",
+    "url": "https://example.invalid/lad8-infinite-wealth/releases/download/v0.9.1/lad8-infinite-wealth-vi-0.9.1.zip",
+    "gameBuild": "17233673",
+    "notes": "Sửa lỗi hiển thị dấu ở menu phụ."
+  },
+  {
+    "version": "0.9.0",
+    "date": "2026-11-06",
+    "fileName": "lad8-infinite-wealth-vi-0.9.0.zip",
+    "sizeBytes": 13421772,
+    "sha256": "b81e4d7a2c9f60351e8a7b4d2c9f1e6a3b5d7c8e0f2a4b6c8d1e3f5a7b9c0d2e",
+    "url": "https://example.invalid/lad8-infinite-wealth/releases/download/v0.9.0/lad8-infinite-wealth-vi-0.9.0.zip",
+    "gameBuild": "17233673",
+    "notes": "Bản thử đầu tiên."
+  }
+]
