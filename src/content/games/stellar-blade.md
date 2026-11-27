@@ -4,7 +4,7 @@ title: "Stellar Blade"
 platform: "PC (Steam, Windows x64)"
 edition: "Steam, bản 1.5.0"
 status: dang-dich
-progress: 0
+progress: 90
 tagline: "Bản Việt hóa của người hâm mộ cho bản Steam: toàn bộ văn bản trong game, kể cả DLC NIKKE và NieR."
 credits:
   - name: "Zaldor (Vergilize)"
