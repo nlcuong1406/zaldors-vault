@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "version": "0.9.1",
+    "date": "2026-11-27",
+    "fileName": "LAD8-VietHoa-v0.9.1.zip",
+    "sizeBytes": 14374700,
+    "sha256": "e3d184d0ba710a1ee0c1c52924360fee8e716b20dd98446a7947667e9b07a12c",
+    "url": "https://github.com/nlcuong1406/zaldors-vault/releases/download/lad8-infinite-wealth-v0.9.1/LAD8-VietHoa-v0.9.1.zip",
+    "gameBuild": "17233673",
+    "notes": "LAD8 Việt hóa – GHI CHÚ PHÁT HÀNH\n==================================\n\nPhiên bản: 0.9.1\nNgày: 2026-11-27\nGame: Like a Dragon: Infinite Wealth, bản Steam trên Windows, build 17233673\n\nNỘI DUNG\n- Giao diện: menu, cài đặt, vật phẩm, kỹ năng và các bảng chữ hệ thống.\n- Cốt truyện chính: 16.237 câu, chương 0–14.\n- Nội dung phụ: 53.964 ô (tên, thoại phụ, minigame, tra cứu).\n- Chữ trong ảnh: 39 ảnh giao diện chính (menu tạm dừng, trận đánh, kết quả, màn lưu, màn tiêu đề,\n  thông báo chung); font chữ trong game có thêm chữ tiếng Việt.\n- Năm file game bị đổi, tổng 280 mục dữ liệu.\n\nMỨC ĐÃ KIỂM\n- Câu chữ cốt truyện và nội dung phụ: người thực hiện đã duyệt từng câu.\n- Giao diện và cốt truyện đã được chơi thử trong game trên máy của người thực hiện.\n- Ảnh giao diện có chữ Việt (menu, trận đánh, kết quả, màn lưu) chưa được soát trong game: đây là bản thử, có thể có chữ bị cắt hoặc lệch.\n- Bộ cài và gỡ đã thử trên bản sao cách ly của file game; máy Windows khác: chưa thử."
+  }
+]
