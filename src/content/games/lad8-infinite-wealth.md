@@ -6,6 +6,7 @@ edition: "Steam"
 status: dang-dich
 progress: 90
 tagline: "Bản Việt hóa của người hâm mộ cho bản Steam trên Windows: giao diện, cốt truyện chính và nội dung phụ."
+cover: "../../assets/games/lad8-infinite-wealth/cover.jpg"
 credits:
   - name: "Zaldor (Vergilize)"
     role: "Thực hiện, duyệt từng câu"

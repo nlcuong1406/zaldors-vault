@@ -55,6 +55,7 @@ Không bao giờ đặt biến này khi dựng bản đưa lên mạng.
    - `credits`: danh sách `name` và `role`
 3. Phần thân file viết hai mục: `## Giới thiệu` và `## Hướng dẫn cài đặt`.
 4. Ảnh để trong `src/assets/games/<id>/` và trỏ tới bằng đường dẫn tương đối, ví dụ `cover: ../../assets/games/<id>/cover.jpg`.
+   Ảnh bìa hiện tại của LAD8, Stellar Blade, Persona 4 Golden và Persona 5 Royal lấy từ trang Steam của từng game (`cdn.akamai.steamstatic.com/steam/apps/<appid>/`) và thuộc bản quyền của nhà phát hành. Nếu được yêu cầu gỡ: xóa file `cover.jpg` và dòng `cover:` tương ứng rồi push.
 5. Đừng bỏ bản dịch thô, glossary hay file game vào repo.
 
 ## Phát hành một bản vá

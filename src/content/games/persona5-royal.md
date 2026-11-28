@@ -6,6 +6,7 @@ edition: "Steam (AppID 1687950)"
 status: dang-dich
 progress: 0
 tagline: "Chưa có giới thiệu."
+cover: "../../assets/games/persona5-royal/cover.jpg"
 credits:
   - name: "Zaldor (Vergilize)"
     role: "Dịch và kỹ thuật"

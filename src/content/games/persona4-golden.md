@@ -6,6 +6,7 @@ edition: "Steam (AppID 1113000)"
 status: dang-dich
 progress: 0
 tagline: "Chưa có giới thiệu."
+cover: "../../assets/games/persona4-golden/cover.jpg"
 credits:
   - name: "Zaldor (Vergilize)"
     role: "Dịch và kỹ thuật"
